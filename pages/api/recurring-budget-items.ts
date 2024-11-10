@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
 
     const newItems = await Promise.all(
-      itemsToRecur.map(async (item: { id: string; name: string; amount: number; type: string; category: string; recurrence: string; recurrenceDate: Date; userId: string; }) => {
+      itemsToRecur.map(async (item: { id: string; name: string; amount: number; type: string; category: string; recurrence: string; recurrenceDate: Date | null; userId: string; }) => {
         let nextRecurrenceDate: Date
 
         switch (item.recurrence) {
