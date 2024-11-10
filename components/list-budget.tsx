@@ -161,7 +161,9 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>{item.category}</span>
+                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded-full">
+                    {item.category}
+                  </span>
                   <span>{item.recurrence}</span>
                 </div>
                 {item.note && (
