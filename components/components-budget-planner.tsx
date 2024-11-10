@@ -48,7 +48,9 @@ export function BudgetPlanner() {
 
   const fetchBudgetItems = async () => {
     try {
-      const response = await fetch('/api/budget-items')
+      const response = await fetch('/api/budget-items', {
+        credentials: 'include',
+      })
       if (!response.ok) {
         throw new Error('Failed to fetch budget items')
       }
@@ -75,6 +77,7 @@ export function BudgetPlanner() {
     try {
       const response = await fetch("/api/budget-items", {
         method: "POST",
+        credentials: 'include',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
@@ -107,6 +110,7 @@ export function BudgetPlanner() {
     try {
       const response = await fetch(`/api/budget-items/${id}`, {
         method: "DELETE",
+        credentials: 'include',
       })
       if (!response.ok) {
         throw new Error("Failed to remove item")

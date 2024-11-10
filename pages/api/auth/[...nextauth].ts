@@ -22,51 +22,8 @@ declare module "next-auth" {
   }
 }
 
-export default async function auth(req: NextApiRequest, res: NextApiResponse) {
-  // Run CORS middleware
-  await runMiddleware(req, res, cors)
-
-  // Handle NextAuth
-  return NextAuth(req, res, {
-    providers: [
-      GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID!,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      }),
-    ],
-    secret: process.env.NEXTAUTH_SECRET,
-    callbacks: {
-      async signIn({ user, account, profile }) {
-        return true
-      },
-      async session({ session, token }): Promise<Session> {
-        if (session.user) {
-          // Get or create user
-          const user = await getUserOrCreate(session);
-          
-          // Update session with user ID
-          session.user.id = user.id;
-
-          // Create session if it doesn't exist
-          await createSessionIfNotExists(session, token);
-
-          console.log('Modified session:', session);
-        }
-
-        return session
-      },
-      async jwt({ token, account, profile }): Promise<JWT> {
-        if (account && profile) {
-          token.id = profile.sub
-        }
-        return token
-      },
-    },
-  })
-}
-
-// Function to get existing user or create new one
-async function getUserOrCreate(session: Session) {
+// Export helper functions for testing
+export async function getUserOrCreate(session: Session) {
   const existingUser = await prisma.user.findUnique({
     where: {
       email: session.user.email!,
@@ -85,8 +42,7 @@ async function getUserOrCreate(session: Session) {
   return existingUser;
 }
 
-// Function to create a session if it doesn't already exist
-async function createSessionIfNotExists(session: Session, token: JWT) {
+export async function createSessionIfNotExists(session: Session, token: JWT) {
   const sessionToken = token.id as string;
 
   const existingSession = await prisma.session.findUnique({
@@ -104,4 +60,52 @@ async function createSessionIfNotExists(session: Session, token: JWT) {
       },
     });
   }
+}
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
+  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: 'jwt',
+  },
+  callbacks: {
+    async signIn({ user, account, profile }) {
+      return true
+    },
+    async session({ session, token }): Promise<Session> {
+      if (session.user) {
+        // Get or create user
+        const user = await getUserOrCreate(session);
+        
+        // Update session with user ID
+        session.user.id = user.id;
+
+        // Create session if it doesn't exist
+        await createSessionIfNotExists(session, token);
+
+        console.log('Modified session:', session);
+      }
+
+      return session
+    },
+    async jwt({ token, account, profile }): Promise<JWT> {
+      if (account && profile) {
+        token.id = profile.sub
+      }
+      return token
+    },
+  },
+}
+
+export default async function auth(req: NextApiRequest, res: NextApiResponse) {
+  // Run CORS middleware
+  await runMiddleware(req, res, cors)
+
+  // Handle NextAuth
+  return NextAuth(req, res, authOptions)
 }

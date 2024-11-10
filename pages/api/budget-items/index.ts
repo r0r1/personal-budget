@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getSession } from 'next-auth/react'
+import { getServerSession } from 'next-auth'
 import { PrismaClient } from '@prisma/client'
+import { authOptions } from '../auth/[...nextauth]'
 
 const prisma = new PrismaClient()
 
@@ -13,8 +14,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Log request headers for debugging
   console.log('Request Headers:', req.headers);
 
-  // Get session
-  const session = await getSession({ req });
+  // Get session using getServerSession
+  const session = await getServerSession(req, res, authOptions);
   console.log('Session:', session);
 
   if (!session || !session.user) {
