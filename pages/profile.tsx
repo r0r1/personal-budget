@@ -1,6 +1,7 @@
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -25,6 +26,12 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto p-4">
+      <header className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Personal Finance Budget</h1>
+        <Link href="/">
+          <Button variant="outline">Home</Button>
+        </Link>
+      </header>
       <Card className="w-full max-w-md mx-auto">
         <CardHeader>
           <CardTitle>User Profile</CardTitle>

@@ -5,14 +5,14 @@ import { useSession } from "next-auth/react"
 import { Plus, Trash2, Edit2, Calendar } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { Button } from "../components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
+import { Input } from "../components/ui/input"
+import { Label } from "../components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
+import { Textarea } from "../components/ui/textarea"
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover"
+import { Calendar as CalendarComponent } from "../components/ui/calendar"
 
 type Item = {
   id: string
@@ -38,6 +38,7 @@ export function BudgetPlanner() {
   const [recurrenceDate, setRecurrenceDate] = useState<Date>(new Date())
   const [note, setNote] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -47,7 +48,10 @@ export function BudgetPlanner() {
 
   const fetchBudgetItems = async () => {
     try {
-      const response = await fetch(`/api/budget-items?userId=${session?.user?.id}`)
+      const response = await fetch('/api/budget-items')
+      if (!response.ok) {
+        throw new Error('Failed to fetch budget items')
+      }
       const data = await response.json()
       setItems(data)
     } catch (error) {
@@ -57,10 +61,17 @@ export function BudgetPlanner() {
   }
 
   const addItem = async () => {
-    if (!name || !amount) {
+    if (!name || !amount || !category) {
       toast.error("Please fill in all required fields")
       return
     }
+
+    if (isNaN(parseFloat(amount))) {
+      toast.error("Please enter a valid amount")
+      return
+    }
+
+    setIsLoading(true)
     try {
       const response = await fetch("/api/budget-items", {
         method: "POST",
@@ -73,19 +84,22 @@ export function BudgetPlanner() {
           recurrence,
           recurrenceDate,
           note,
-          userId: session?.user?.id,
         }),
       })
-      if (response.ok) {
-        fetchBudgetItems()
-        resetForm()
-        toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} item added`)
-      } else {
-        throw new Error("Failed to add item")
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Failed to add item")
       }
+
+      await fetchBudgetItems()
+      resetForm()
+      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} item added`)
     } catch (error) {
       console.error("Error adding budget item:", error)
-      toast.error("Failed to add budget item")
+      toast.error(error instanceof Error ? error.message : "Failed to add budget item")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -94,12 +108,11 @@ export function BudgetPlanner() {
       const response = await fetch(`/api/budget-items/${id}`, {
         method: "DELETE",
       })
-      if (response.ok) {
-        setItems(items.filter((item) => item.id !== id))
-        toast.success("Item removed successfully")
-      } else {
+      if (!response.ok) {
         throw new Error("Failed to remove item")
       }
+      setItems(items.filter((item) => item.id !== id))
+      toast.success("Item removed successfully")
     } catch (error) {
       console.error("Error removing budget item:", error)
       toast.error("Failed to remove budget item")
@@ -121,32 +134,45 @@ export function BudgetPlanner() {
   }
 
   const updateItem = async () => {
-    if (editingId) {
-      try {
-        const response = await fetch(`/api/budget-items/${editingId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            amount: parseFloat(amount),
-            type,
-            category,
-            recurrence,
-            recurrenceDate,
-            note,
-          }),
-        })
-        if (response.ok) {
-          fetchBudgetItems()
-          resetForm()
-          toast.success("Item updated successfully")
-        } else {
-          throw new Error("Failed to update item")
-        }
-      } catch (error) {
-        console.error("Error updating budget item:", error)
-        toast.error("Failed to update budget item")
+    if (!editingId || !name || !amount || !category) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    if (isNaN(parseFloat(amount))) {
+      toast.error("Please enter a valid amount")
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/budget-items/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          amount: parseFloat(amount),
+          type,
+          category,
+          recurrence,
+          recurrenceDate,
+          note,
+        }),
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Failed to update item")
       }
+
+      await fetchBudgetItems()
+      resetForm()
+      toast.success("Item updated successfully")
+    } catch (error) {
+      console.error("Error updating budget item:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to update budget item")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -174,11 +200,20 @@ export function BudgetPlanner() {
           <CardDescription>Enter the details of your income or expense</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-4">
+          <form className="grid gap-4" onSubmit={(e) => {
+            e.preventDefault()
+            editingId ? updateItem() : addItem()
+          }}>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Salary" />
+                <Input 
+                  id="name" 
+                  value={name} 
+                  onChange={(e) => setName(e.target.value)} 
+                  placeholder="Salary"
+                  required 
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="amount">Amount</Label>
@@ -188,6 +223,9 @@ export function BudgetPlanner() {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="1000"
+                  required
+                  step="0.01"
+                  min="0"
                 />
               </div>
             </div>
@@ -211,6 +249,7 @@ export function BudgetPlanner() {
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   placeholder="Work"
+                  required
                 />
               </div>
               <div className="grid gap-2">
@@ -237,6 +276,7 @@ export function BudgetPlanner() {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
+                    type="button"
                     variant="outline"
                     className={`w-full justify-start text-left font-normal ${
                       !recurrenceDate && "text-muted-foreground"
@@ -268,8 +308,14 @@ export function BudgetPlanner() {
           </form>
         </CardContent>
         <CardFooter>
-          <Button onClick={editingId ? updateItem : addItem} className="w-full">
-            {editingId ? (
+          <Button 
+            onClick={editingId ? updateItem : addItem} 
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              "Processing..."
+            ) : editingId ? (
               <>
                 <Edit2 className="mr-2 h-4 w-4" /> Update Item
               </>
