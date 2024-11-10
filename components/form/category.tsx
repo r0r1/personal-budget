@@ -24,7 +24,12 @@ const CategoryBudget: React.FC<CategoryBudgetProps> = ({ onChange, value }) => {
         "Entertainment", 
         "Education", 
         "Sports", 
-        "Social"
+        "Social",
+        "Business",
+        "Health",
+        "Travel",
+        "Bills",
+        "Other"
     ];
 
     const handleCategoryChange = (value: string) => {
