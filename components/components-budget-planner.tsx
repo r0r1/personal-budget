@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "../components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover"
 import { Calendar as CalendarComponent } from "../components/ui/calendar"
+import CategoryBudget from '../components/form/category'; // Adjust the path as necessary
 
 type Item = {
   id: string
@@ -33,7 +34,7 @@ export function BudgetPlanner() {
   const [name, setName] = useState("")
   const [amount, setAmount] = useState("")
   const [type, setType] = useState<"income" | "expense">("income")
-  const [category, setCategory] = useState("")
+  const [category, setCategory] = useState<string | null>(null)
   const [recurrence, setRecurrence] = useState<"once" | "daily" | "weekly" | "monthly" | "yearly">("monthly")
   const [recurrenceDate, setRecurrenceDate] = useState<Date>(new Date())
   const [note, setNote] = useState("")
@@ -184,7 +185,7 @@ export function BudgetPlanner() {
     setEditingId(null)
     setName("")
     setAmount("")
-    setCategory("")
+    setCategory(null)
     setRecurrence("monthly")
     setRecurrenceDate(new Date())
     setNote("")
@@ -247,14 +248,7 @@ export function BudgetPlanner() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="Work"
-                  required
-                />
+                <CategoryBudget onChange={setCategory} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="recurrence">Recurrence</Label>
