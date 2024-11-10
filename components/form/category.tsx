@@ -17,6 +17,7 @@ const CategoryBudget: React.FC<CategoryBudgetProps> = ({ onChange, value }) => {
     }, [value]);
 
     const categoryOptions = [
+        "Work",
         "Meals", 
         "Transport", 
         "Subscription", 

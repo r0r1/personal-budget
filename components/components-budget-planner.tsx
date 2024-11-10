@@ -63,6 +63,10 @@ export function BudgetPlanner() {
     }
   }
 
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat('en-US', { style: 'decimal' }).format(amount);
+  }
+
   const addItem = async () => {
     if (!name || !amount || !category) {
       toast.error("Please fill in all required fields")
@@ -82,7 +86,7 @@ export function BudgetPlanner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          amount: parseFloat(amount),
+          amount: parseFloat(amount.replace(/,/g, '')) || 0,
           type,
           category,
           recurrence,
@@ -156,7 +160,7 @@ export function BudgetPlanner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          amount: parseFloat(amount),
+          amount: parseFloat(amount.replace(/,/g, '')),
           type,
           category,
           recurrence,
@@ -228,10 +232,13 @@ export function BudgetPlanner() {
                 <Label htmlFor="amount">Amount</Label>
                 <Input
                   id="amount"
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="1000"
+                  type="text"
+                  value={amount ? formatAmount(parseFloat(amount.replace(/,/g, '')) || 0) : ''}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/,/g, '');
+                    setAmount(value);
+                  }}
+                  placeholder="1,000"
                   required
                   step="0.01"
                   min="0"
@@ -344,7 +351,7 @@ export function BudgetPlanner() {
                   <div className="flex items-center justify-between">
                     <span className="font-semibold">{item.name}</span>
                     <span className={`${item.type === "income" ? "text-green-600" : "text-red-600"}`}>
-                      ${item.amount.toFixed(2)}
+                      IDR {formatAmount(item.amount)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -382,15 +389,15 @@ export function BudgetPlanner() {
             <div className="space-y-4">
               <div className="flex justify-between">
                 <span>Total Income:</span>
-                <span className="text-green-600">${totalIncome.toFixed(2)}</span>
+                <span className="text-green-600">IDR {formatAmount(totalIncome)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Total Expenses:</span>
-                <span className="text-red-600">${totalExpenses.toFixed(2)}</span>
+                <span className="text-red-600">IDR {formatAmount(totalExpenses.toFixed(2))}</span>
               </div>
               <div className="flex justify-between font-bold">
                 <span>Balance:</span>
-                <span className={balance >= 0 ? "text-green-600" : "text-red-600"}>${balance.toFixed(2)}</span>
+                <span className={balance >= 0 ? "text-green-600" : "text-red-600"}>IDR {formatAmount(balance.toFixed(2))}</span>
               </div>
             </div>
             <div className="mt-8">
