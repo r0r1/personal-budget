@@ -27,7 +27,7 @@ export const startCronJob = () => {
           type: item.type,
           category: item.category,
           recurrence: item.recurrence,
-          recurrenceDate: calculateNextRecurrence(item.recurrenceDate, item.recurrence),
+          recurrenceDate: calculateNextRecurrence(item.recurrenceDate || new Date(), item.recurrence),
           note: item.note,
           userId: item.userId
         }
@@ -36,7 +36,7 @@ export const startCronJob = () => {
       // Update the recurrence date of the original item
       await prisma.budgetItem.update({
         where: { id: item.id },
-        data: { recurrenceDate: calculateNextRecurrence(item.recurrenceDate, item.recurrence) }
+        data: { recurrenceDate: calculateNextRecurrence(item.recurrenceDate || new Date(), item.recurrence) }
       })
     }
   })

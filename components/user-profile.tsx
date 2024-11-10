@@ -5,12 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 export function UserProfile() {
   const { data: session } = useSession()
   const [name, setName] = useState(session?.user?.name || "")
-  const { toast } = useToast()
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,12 +20,13 @@ export function UserProfile() {
         body: JSON.stringify({ name }),
       })
       if (response.ok) {
-        toast({ title: "Profile updated successfully" })
+        toast.success("Profile updated successfully")
       } else {
         throw new Error("Failed to update profile")
       }
     } catch (error) {
-      toast({ title: "Error updating profile", variant: "destructive" })
+      console.error('Error updating profile', error)
+      toast.error("Error updating profile")
     }
   }
 

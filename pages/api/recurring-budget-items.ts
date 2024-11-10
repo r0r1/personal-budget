@@ -28,16 +28,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         switch (item.recurrence) {
           case 'daily':
-            nextRecurrenceDate = addDays(new Date(item.recurrenceDate), 1)
+            nextRecurrenceDate = addDays(new Date(item.recurrenceDate || new Date()), 1)
             break
           case 'weekly':
-            nextRecurrenceDate = addWeeks(new Date(item.recurrenceDate), 1)
+            nextRecurrenceDate = addWeeks(new Date(item.recurrenceDate || new Date()), 1)
             break
           case 'monthly':
-            nextRecurrenceDate = addMonths(new Date(item.recurrenceDate), 1)
+            nextRecurrenceDate = addMonths(new Date(item.recurrenceDate || new Date()), 1)
             break
           case 'yearly':
-            nextRecurrenceDate = addYears(new Date(item.recurrenceDate), 1)
+            nextRecurrenceDate = addYears(new Date(item.recurrenceDate || new Date()), 1)
             break
           default:
             return null
@@ -51,9 +51,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               type: item.type,
               category: item.category,
               recurrence: item.recurrence,
-              recurrenceDate: nextRecurrenceDate,
-              createdAt: now,
-              updatedAt: now,
+              recurrenceDate: nextRecurrenceDate || new Date(),
+              user: { connect: { id: item.userId } }, // Assuming userId is available in the item
             },
           })
 

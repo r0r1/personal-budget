@@ -207,7 +207,11 @@ export function BudgetPlanner() {
         <CardContent>
           <form className="grid gap-4" onSubmit={(e) => {
             e.preventDefault()
-            editingId ? updateItem() : addItem()
+            if (editingId) {
+              updateItem()
+            } else {
+              addItem()
+            }
           }}>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
@@ -254,7 +258,7 @@ export function BudgetPlanner() {
                 <Label htmlFor="recurrence">Recurrence</Label>
                 <Select
                   value={recurrence}
-                  onValueChange={setRecurrence}
+                  onValueChange={(value: "once" | "daily" | "weekly" | "biweekly" | "monthly" | "yearly") => setRecurrence(value)}
                 >
                   <SelectTrigger id="recurrence">
                     <SelectValue placeholder="Select recurrence" />
@@ -289,7 +293,7 @@ export function BudgetPlanner() {
                     <CalendarComponent
                       mode="single"
                       selected={recurrenceDate || undefined}
-                      onSelect={setRecurrenceDate}
+                      onSelect={(value: Date | undefined) => setRecurrenceDate(value || null)}
                       initialFocus
                     />
                   </PopoverContent>

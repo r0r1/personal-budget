@@ -33,6 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
         res.status(200).json(updatedItem)
       } catch (error) {
+        console.error('Error updating budget item', error)
         res.status(500).json({ message: 'Error updating budget item' })
       }
       break
@@ -44,6 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
         res.status(204).end()
       } catch (error) {
+        console.error('Error deleting budget item', error)
         res.status(500).json({ message: 'Error deleting budget item' })
       }
       break

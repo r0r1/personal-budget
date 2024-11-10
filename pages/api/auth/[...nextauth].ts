@@ -75,6 +75,7 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
+      console.log('signIn', user, account, profile)
       return true
     },
     async session({ session, token }): Promise<Session> {
