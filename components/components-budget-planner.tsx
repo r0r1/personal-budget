@@ -22,7 +22,7 @@ type Item = {
   type: "income" | "expense"
   category: string
   recurrence: "once" | "daily" | "weekly" | "monthly" | "yearly"
-  recurrenceDate: Date
+  recurrenceDate: Date | null
   note: string
   createdAt: Date
   updatedAt: Date
@@ -35,8 +35,8 @@ export function BudgetPlanner() {
   const [amount, setAmount] = useState("")
   const [type, setType] = useState<"income" | "expense">("income")
   const [category, setCategory] = useState<string | null>(null)
-  const [recurrence, setRecurrence] = useState<"once" | "daily" | "weekly" | "monthly" | "yearly">("monthly")
-  const [recurrenceDate, setRecurrenceDate] = useState<Date>(new Date())
+  const [recurrence, setRecurrence] = useState<"once" | "daily" | "weekly" | "monthly" | "yearly">("once")
+  const [recurrenceDate, setRecurrenceDate] = useState<Date | null>(null)
   const [note, setNote] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -186,8 +186,8 @@ export function BudgetPlanner() {
     setName("")
     setAmount("")
     setCategory(null)
-    setRecurrence("monthly")
-    setRecurrenceDate(new Date())
+    setRecurrence("once")
+    setRecurrenceDate(null)
     setNote("")
   }
 
@@ -254,46 +254,53 @@ export function BudgetPlanner() {
                 <Label htmlFor="recurrence">Recurrence</Label>
                 <Select
                   value={recurrence}
-                  onValueChange={(value: "once" | "daily" | "weekly" | "monthly" | "yearly") => setRecurrence(value)}
+                  onValueChange={(value: "once" | "weekly" | "biweekly" | "monthly" | "yearly") => {
+                    setRecurrence(value);
+                    if (value === "once") {
+                      setRecurrenceDate(null);
+                    }
+                  }}
                 >
                   <SelectTrigger id="recurrence">
                     <SelectValue placeholder="Select recurrence" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="once">Once</SelectItem>
-                    <SelectItem value="daily">Daily</SelectItem>
                     <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="biweekly">Bi-Weekly</SelectItem>
                     <SelectItem value="monthly">Monthly</SelectItem>
                     <SelectItem value="yearly">Yearly</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="recurrenceDate">Recurrence Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={`w-full justify-start text-left font-normal ${
-                      !recurrenceDate && "text-muted-foreground"
-                    }`}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {recurrenceDate ? format(recurrenceDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <CalendarComponent
-                    mode="single"
-                    selected={recurrenceDate}
-                    onSelect={(date) => date && setRecurrenceDate(date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            {recurrence !== "once" && (
+              <div className="grid gap-2">
+                <Label htmlFor="recurrenceDate">Recurrence Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={`w-full justify-start text-left font-normal ${
+                        !recurrenceDate && "text-muted-foreground"
+                      }`}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {recurrenceDate ? format(recurrenceDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={recurrenceDate}
+                      onSelect={(date) => date && setRecurrenceDate(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
             <div className="grid gap-2">
               <Label htmlFor="note">Note</Label>
               <Textarea
