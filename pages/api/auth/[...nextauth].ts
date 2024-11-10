@@ -10,12 +10,15 @@ import { NextApiRequest } from "next"
 
 const prisma = new PrismaClient()
 
-interface SessionWithUser extends Session {
-  user: {
-    id?: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
+// Extend the built-in Session type
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    }
   }
 }
 
@@ -39,13 +42,13 @@ export default async function auth(req: NextApiRequest, res: NextApiResponse) {
       async session({ session, token }): Promise<Session> {
         if (session.user) {
           // Get or create user
-          const user = await getUserOrCreate(session as SessionWithUser);
+          const user = await getUserOrCreate(session);
           
           // Update session with user ID
           session.user.id = user.id;
 
           // Create session if it doesn't exist
-          await createSessionIfNotExists(session as SessionWithUser, token);
+          await createSessionIfNotExists(session, token);
 
           console.log('Modified session:', session);
         }
@@ -63,7 +66,7 @@ export default async function auth(req: NextApiRequest, res: NextApiResponse) {
 }
 
 // Function to get existing user or create new one
-async function getUserOrCreate(session: SessionWithUser) {
+async function getUserOrCreate(session: Session) {
   const existingUser = await prisma.user.findUnique({
     where: {
       email: session.user.email!,
@@ -83,7 +86,7 @@ async function getUserOrCreate(session: SessionWithUser) {
 }
 
 // Function to create a session if it doesn't already exist
-async function createSessionIfNotExists(session: SessionWithUser, token: JWT) {
+async function createSessionIfNotExists(session: Session, token: JWT) {
   const sessionToken = token.id as string;
 
   const existingSession = await prisma.session.findUnique({
@@ -92,10 +95,10 @@ async function createSessionIfNotExists(session: SessionWithUser, token: JWT) {
     },
   });
 
-  if (!existingSession) {
+  if (!existingSession && session.user.id) {
     await prisma.session.create({
       data: {
-        userId: session.user.id!,
+        userId: session.user.id,
         expires: session.expires,
         sessionToken: sessionToken,
       },

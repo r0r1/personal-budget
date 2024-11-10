@@ -5,12 +5,20 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // get session
-  const session = await getSession({ req })
-  console.log('session', session)
+  // Disable SSL certificate validation for this request
+  if (process.env.NODE_ENV === "development") {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  }
+
+  // Log request headers for debugging
+  console.log('Request Headers:', req.headers);
+
+  // Get session
+  const session = await getSession({ req });
+  console.log('Session:', session);
 
   if (!session || !session.user) {
-    return res.status(401).json({ message: 'Unauthorized' })
+    return res.status(401).json({ message: 'Unauthorized' });
   }
 
   switch (req.method) {
@@ -18,20 +26,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         const items = await prisma.budgetItem.findMany({
           where: { userId: session.user.id },
-        })
-        res.status(200).json(items)
+        });
+        res.status(200).json(items);
       } catch (error) {
-        console.error('Error fetching budget items:', error)
-        res.status(500).json({ message: 'Error fetching budget items', error: error instanceof Error ? error.message : 'Unknown error' })
+        console.error('Error fetching budget items:', error);
+        res.status(500).json({ message: 'Error fetching budget items', error: error instanceof Error ? error.message : 'Unknown error' });
       }
-      break
+      break;
 
     case 'POST':
       try {
-        const { name, amount, type, category, recurrence, recurrenceDate, note } = req.body
+        const { name, amount, type, category, recurrence, recurrenceDate, note } = req.body;
         
         if (!name || amount === undefined || !type || !category || !recurrence || !recurrenceDate) {
-          return res.status(400).json({ message: 'Missing required fields' })
+          return res.status(400).json({ message: 'Missing required fields' });
         }
 
         const newItem = await prisma.budgetItem.create({
@@ -45,16 +53,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             note: note || '',
             userId: session.user.id,
           },
-        })
-        res.status(201).json(newItem)
+        });
+        res.status(201).json(newItem);
       } catch (error) {
-        console.error('Error creating budget item:', error)
-        res.status(500).json({ message: 'Error creating budget item', error: error instanceof Error ? error.message : 'Unknown error' })
+        console.error('Error creating budget item:', error);
+        res.status(500).json({ message: 'Error creating budget item', error: error instanceof Error ? error.message : 'Unknown error' });
       }
-      break
+      break;
 
     default:
-      res.setHeader('Allow', ['GET', 'POST'])
-      res.status(405).end(`Method ${req.method} Not Allowed`)
+      res.setHeader('Allow', ['GET', 'POST']);
+      res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
