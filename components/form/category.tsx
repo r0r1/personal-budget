@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
+import React, { useState, useEffect } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { Label } from "../ui/label"
 
 interface CategoryBudgetProps {
-    onChange: (value: string) => void; // Define the onChange prop type
+    onChange: (value: string) => void;
+    value?: string | null;
 }
 
-const CategoryBudget: React.FC<CategoryBudgetProps> = ({ onChange }) => {
-    const [category, setCategory] = useState<string>(''); // State for selected category
+const CategoryBudget: React.FC<CategoryBudgetProps> = ({ onChange, value }) => {
+    const [category, setCategory] = useState<string>(value || '');
+
+    useEffect(() => {
+        if (value) {
+            setCategory(value);
+        }
+    }, [value]);
+
     const categoryOptions = [
         "Meals", 
         "Transport", 
@@ -17,11 +25,11 @@ const CategoryBudget: React.FC<CategoryBudgetProps> = ({ onChange }) => {
         "Education", 
         "Sports", 
         "Social"
-    ]; // Category options
+    ];
 
     const handleCategoryChange = (value: string) => {
         setCategory(value);
-        onChange(value); // Call onChange prop when category changes
+        onChange(value);
     };
 
     return (
@@ -40,12 +48,9 @@ const CategoryBudget: React.FC<CategoryBudgetProps> = ({ onChange }) => {
                     </SelectItem>
                   ))}
                 </SelectContent>
-                
             </Select>
         </div>
     );
 };
-
-// ... existing code ...
 
 export default CategoryBudget;

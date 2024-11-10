@@ -5,15 +5,15 @@ import { useSession } from "next-auth/react"
 import { Plus, Trash2, Edit2, Calendar } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
-import { Button } from "../components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
-import { Input } from "../components/ui/input"
-import { Label } from "../components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
-import { Textarea } from "../components/ui/textarea"
-import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover"
-import { Calendar as CalendarComponent } from "../components/ui/calendar"
-import CategoryBudget from '../components/form/category'; // Adjust the path as necessary
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import CategoryBudget from './form/category'
 
 type Item = {
   id: string
@@ -21,7 +21,7 @@ type Item = {
   amount: number
   type: "income" | "expense"
   category: string
-  recurrence: "once" | "daily" | "weekly" | "monthly" | "yearly"
+  recurrence: "once" | "daily" | "weekly" | "biweekly" | "monthly" | "yearly"
   recurrenceDate: Date | null
   note: string
   createdAt: Date
@@ -35,7 +35,7 @@ export function BudgetPlanner() {
   const [amount, setAmount] = useState("")
   const [type, setType] = useState<"income" | "expense">("income")
   const [category, setCategory] = useState<string | null>(null)
-  const [recurrence, setRecurrence] = useState<"once" | "daily" | "weekly" | "monthly" | "yearly">("once")
+  const [recurrence, setRecurrence] = useState<"once" | "daily" | "weekly" | "biweekly" | "monthly" | "yearly">("once")
   const [recurrenceDate, setRecurrenceDate] = useState<Date | null>(null)
   const [note, setNote] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -125,20 +125,14 @@ export function BudgetPlanner() {
   }
 
   const editItem = (id: string) => {
-    console.log('editItem', id)
     const itemToEdit = items.find((item) => item.id === id)
     if (itemToEdit) {
-      console.log('itemToEdit', itemToEdit)
       setName(itemToEdit.name)
       setAmount(itemToEdit.amount.toString())
       setType(itemToEdit.type)
-      const selectedCategoryBudget = items
-        .filter((item) => item.category === itemToEdit.category)
-        .reduce((sum, item) => sum + item.amount, 0);
-      setCategory(itemToEdit.category);
-      console.log(`Budget for selected category (${itemToEdit.category}): $${selectedCategoryBudget.toFixed(2)}`);
+      setCategory(itemToEdit.category)
       setRecurrence(itemToEdit.recurrence)
-      setRecurrenceDate(new Date(itemToEdit.recurrenceDate))
+      setRecurrenceDate(itemToEdit.recurrenceDate ? new Date(itemToEdit.recurrenceDate) : null)
       setNote(itemToEdit.note)
       setEditingId(id)
     }
@@ -254,18 +248,13 @@ export function BudgetPlanner() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <CategoryBudget onChange={setCategory} />
+                <CategoryBudget onChange={setCategory} value={category} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="recurrence">Recurrence</Label>
                 <Select
                   value={recurrence}
-                  onValueChange={(value: "once" | "weekly" | "biweekly" | "monthly" | "yearly") => {
-                    setRecurrence(value);
-                    if (value === "once") {
-                      setRecurrenceDate(null);
-                    }
-                  }}
+                  onValueChange={setRecurrence}
                 >
                   <SelectTrigger id="recurrence">
                     <SelectValue placeholder="Select recurrence" />
@@ -299,8 +288,8 @@ export function BudgetPlanner() {
                   <PopoverContent className="w-auto p-0">
                     <CalendarComponent
                       mode="single"
-                      selected={recurrenceDate}
-                      onSelect={(date) => date && setRecurrenceDate(date)}
+                      selected={recurrenceDate || undefined}
+                      onSelect={setRecurrenceDate}
                       initialFocus
                     />
                   </PopoverContent>
@@ -362,7 +351,7 @@ export function BudgetPlanner() {
                     <p className="text-sm text-muted-foreground">Note: {item.note}</p>
                   )}
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    {item.recurrence !== 'once' && (
+                    {item.recurrence !== 'once' && item.recurrenceDate && (
                       <span>Next: {format(new Date(item.recurrenceDate), "MMM d, yyyy")}</span>
                     )}
                     <span>Created: {format(new Date(item.createdAt), "MMM yyyy")}</span>
