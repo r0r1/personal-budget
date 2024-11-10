@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Edit2, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import { Edit2, Trash2, ChevronLeft, ChevronRight, Download } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
 
 type Item = {
   id: string
@@ -29,8 +31,17 @@ interface ListBudgetProps {
 export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const itemsPerPage = 3
-  const totalPages = Math.ceil(items.length / itemsPerPage)
+  
+  // Sort items by created date
+  const sortedItems = [...items].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime()
+    const dateB = new Date(b.createdAt).getTime()
+    return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
+  })
+
+  const totalPages = Math.ceil(sortedItems.length / itemsPerPage)
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'decimal' }).format(amount);
@@ -56,6 +67,48 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
     }
   }
 
+  const exportToPDF = () => {
+    const doc = new jsPDF()
+    
+    // Add title
+    doc.setFontSize(16)
+    doc.text("Budget Report", 14, 15)
+    doc.setFontSize(11)
+    doc.text(`Generated on ${format(new Date(), "MMM d, yyyy")}`, 14, 25)
+
+    // Add summary
+    const totalIncome = items.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0)
+    const totalExpenses = items.filter((item) => item.type === "expense").reduce((sum, item) => sum + item.amount, 0)
+    const balance = totalIncome - totalExpenses
+
+    doc.text(`Total Income: IDR ${formatAmount(totalIncome)}`, 14, 35)
+    doc.text(`Total Expenses: IDR ${formatAmount(totalExpenses)}`, 14, 42)
+    doc.text(`Balance: IDR ${formatAmount(balance)}`, 14, 49)
+
+    // Prepare table data
+    const tableData = sortedItems.map(item => [
+      item.name,
+      `IDR ${formatAmount(item.amount)}`,
+      item.type,
+      item.category,
+      item.recurrence,
+      format(new Date(item.createdAt), "MMM d, yyyy")
+    ])
+
+    // Add table
+    autoTable(doc, {
+      head: [['Name', 'Amount', 'Type', 'Category', 'Recurrence', 'Created Date']],
+      body: tableData,
+      startY: 60,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [41, 128, 185] },
+    })
+
+    // Save the PDF
+    doc.save('budget-report.pdf')
+    toast.success("PDF exported successfully")
+  }
+
   const totalIncome = items.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0)
   const totalExpenses = items.filter((item) => item.type === "expense").reduce((sum, item) => sum + item.amount, 0)
   const balance = totalIncome - totalExpenses
@@ -65,7 +118,7 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
   // Get current page items
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentItems = items.slice(indexOfFirstItem, indexOfLastItem)
+  const currentItems = sortedItems.slice(indexOfFirstItem, indexOfLastItem)
 
   const goToNextPage = () => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages))
@@ -73,6 +126,10 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
 
   const goToPrevPage = () => {
     setCurrentPage((prev) => Math.max(prev - 1, 1))
+  }
+
+  const toggleSortOrder = () => {
+    setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')
   }
 
   return (
@@ -147,8 +204,25 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Budget Items</CardTitle>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleSortOrder}
+            >
+              Sort {sortOrder === 'desc' ? '↑' : '↓'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToPDF}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export PDF
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <ul className="space-y-4 min-h-[400px]">
