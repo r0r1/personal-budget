@@ -393,11 +393,11 @@ export function BudgetPlanner() {
               </div>
               <div className="flex justify-between">
                 <span>Total Expenses:</span>
-                <span className="text-red-600">IDR {formatAmount(totalExpenses.toFixed(2))}</span>
+                <span className="text-red-600">IDR {formatAmount(Number(totalExpenses.toFixed(2)))}</span>
               </div>
               <div className="flex justify-between font-bold">
                 <span>Balance:</span>
-                <span className={balance >= 0 ? "text-green-600" : "text-red-600"}>IDR {formatAmount(balance.toFixed(2))}</span>
+                <span className={balance >= 0 ? "text-green-600" : "text-red-600"}>IDR {formatAmount(Number(balance.toFixed(2)))}</span>
               </div>
             </div>
             <div className="mt-8">
