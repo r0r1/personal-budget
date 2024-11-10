@@ -125,12 +125,18 @@ export function BudgetPlanner() {
   }
 
   const editItem = (id: string) => {
+    console.log('editItem', id)
     const itemToEdit = items.find((item) => item.id === id)
     if (itemToEdit) {
+      console.log('itemToEdit', itemToEdit)
       setName(itemToEdit.name)
       setAmount(itemToEdit.amount.toString())
       setType(itemToEdit.type)
-      setCategory(itemToEdit.category)
+      const selectedCategoryBudget = items
+        .filter((item) => item.category === itemToEdit.category)
+        .reduce((sum, item) => sum + item.amount, 0);
+      setCategory(itemToEdit.category);
+      console.log(`Budget for selected category (${itemToEdit.category}): $${selectedCategoryBudget.toFixed(2)}`);
       setRecurrence(itemToEdit.recurrence)
       setRecurrenceDate(new Date(itemToEdit.recurrenceDate))
       setNote(itemToEdit.note)
@@ -356,7 +362,9 @@ export function BudgetPlanner() {
                     <p className="text-sm text-muted-foreground">Note: {item.note}</p>
                   )}
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Next: {format(new Date(item.recurrenceDate), "MMM d, yyyy")}</span>
+                    {item.recurrence !== 'once' && (
+                      <span>Next: {format(new Date(item.recurrenceDate), "MMM d, yyyy")}</span>
+                    )}
                     <span>Created: {format(new Date(item.createdAt), "MMM yyyy")}</span>
                   </div>
                   <div className="flex justify-end space-x-2">

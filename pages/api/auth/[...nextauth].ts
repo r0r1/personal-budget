@@ -87,8 +87,6 @@ export const authOptions: NextAuthOptions = {
 
         // Create session if it doesn't exist
         await createSessionIfNotExists(session, token);
-
-        console.log('Modified session:', session);
       }
 
       return session

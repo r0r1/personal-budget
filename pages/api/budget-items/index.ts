@@ -11,12 +11,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   }
 
-  // Log request headers for debugging
-  console.log('Request Headers:', req.headers);
-
   // Get session using getServerSession
   const session = await getServerSession(req, res, authOptions);
-  console.log('Session:', session);
 
   if (!session || !session.user) {
     return res.status(401).json({ message: 'Unauthorized' });
@@ -39,8 +35,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         const { name, amount, type, category, recurrence, recurrenceDate, note } = req.body;
         
-        if (!name || amount === undefined || !type || !category || !recurrence || !recurrenceDate) {
+        // Validate required fields
+        if (!name || amount === undefined || !type || !category || !recurrence) {
           return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        // Validate recurrenceDate is provided when recurrence is not "once"
+        if (recurrence !== 'once' && !recurrenceDate) {
+          return res.status(400).json({ message: 'Recurrence date is required for recurring items' });
         }
 
         const newItem = await prisma.budgetItem.create({
@@ -50,7 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             type,
             category,
             recurrence,
-            recurrenceDate: new Date(recurrenceDate),
+            // Only set recurrenceDate if recurrence is not "once"
+            recurrenceDate: recurrence === 'once' ? null : new Date(recurrenceDate),
             note: note || '',
             userId: session.user.id,
           },

@@ -59,7 +59,7 @@ model BudgetItem {
   type           String
   category       String
   recurrence     String
-  recurrenceDate DateTime
+  recurrenceDate DateTime?
   note           String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
