@@ -115,6 +115,19 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
 
   const categories = Array.from(new Set(items.map((item) => item.category)))
 
+  // Calculate category totals and percentages
+  const categoryData = categories.map(category => {
+    const categoryTotal = items
+      .filter((item) => item.category === category)
+      .reduce((sum, item) => sum + item.amount, 0)
+    const percentage = ((categoryTotal / (totalIncome + totalExpenses)) * 100).toFixed(1)
+    return {
+      category,
+      total: categoryTotal,
+      percentage
+    }
+  })
+
   // Get current page items
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
@@ -159,22 +172,14 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
             <h4 className="mb-4 text-sm font-semibold">Budget Breakdown</h4>
             <div className="relative h-64 w-64 mx-auto">
               <svg viewBox="0 0 100 100" className="w-full h-full">
-                {categories.map((category, index) => {
-                  const categoryTotal = items
-                    .filter((item) => item.category === category)
-                    .reduce((sum, item) => sum + item.amount, 0)
-                  const percentage = (categoryTotal / (totalIncome + totalExpenses)) * 100
-                  const offset = categories.slice(0, index).reduce((sum, cat) => {
-                    return (
-                      sum +
-                      (items.filter((item) => item.category === cat).reduce((s, item) => s + item.amount, 0) /
-                        (totalIncome + totalExpenses)) *
-                        100
-                    )
+                {categoryData.map((catData, index) => {
+                  const percentage = Number(catData.percentage)
+                  const offset = categoryData.slice(0, index).reduce((sum, cat) => {
+                    return sum + Number(cat.percentage)
                   }, 0)
                   return (
                     <circle
-                      key={category}
+                      key={catData.category}
                       r="15.9"
                       cx="50"
                       cy="50"
@@ -189,13 +194,15 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
               </svg>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2">
-              {categories.map((category, index) => (
-                <div key={category} className="flex items-center">
+              {categoryData.map((catData, index) => (
+                <div key={catData.category} className="flex items-center">
                   <div
                     className="w-3 h-3 mr-2 rounded-full"
                     style={{ backgroundColor: `hsl(${index * 137.508}, 70%, 50%)` }}
                   />
-                  <span className="text-sm">{category}</span>
+                  <span className="text-sm">
+                    {catData.category} ({catData.percentage}%)
+                  </span>
                 </div>
               ))}
             </div>
