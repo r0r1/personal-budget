@@ -18,17 +18,19 @@ const CategoryBudget: React.FC<CategoryBudgetProps> = ({ onChange, value }) => {
 
     const categoryOptions = [
         "Work",
-        "Meals", 
-        "Transport", 
-        "Subscription", 
+        "Operational", 
+        "Transport",
+        "Subscription",
+        "Home & Utilities",
         "Food", 
         "Entertainment", 
-        "Education", 
+        "Education",
         "Sports", 
         "Social",
         "Business",
         "Health",
         "Travel",
+        "Loan",
         "Bills",
         "Other"
     ];
