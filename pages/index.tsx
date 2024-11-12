@@ -26,7 +26,7 @@ export default function Home() {
   return (
     <div className="container mx-auto p-4">
       <header className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Personal Finance Budget</h1>
+        <h1 className="text-3xl font-bold">SmallBudget</h1>
         <Link href="/profile">
           <Button variant="outline">View Profile</Button>
         </Link>

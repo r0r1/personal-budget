@@ -82,13 +82,15 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
     const balance = totalIncome - totalExpenses
 
     doc.text(`Total Income: IDR ${formatAmount(totalIncome)}`, 14, 35)
-    doc.text(`Total Expenses: IDR ${formatAmount(totalExpenses)}`, 14, 42)
+    doc.setTextColor(255, 0, 0); // Set text color to red for expenses
+    doc.text(`Total Expenses: IDR ${formatAmount(totalExpenses)}`, 14, 42) // Added minus for expenses
+    doc.setTextColor(0, 0, 0); // Reset text color to black for balance
     doc.text(`Balance: IDR ${formatAmount(balance)}`, 14, 49)
 
     // Prepare table data
     const tableData = sortedItems.map(item => [
       item.name,
-      `IDR ${formatAmount(item.amount)}`,
+      item.type === "expense" ? `- IDR ${formatAmount(item.amount)}` : `IDR ${formatAmount(item.amount)}`,
       item.type,
       item.category,
       item.recurrence,

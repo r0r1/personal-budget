@@ -29,11 +29,13 @@ const CategoryBudget: React.FC<CategoryBudgetProps> = ({ onChange, value }) => {
         "Social",
         "Business",
         "Beauty",
+        "Investment & Stocks",
+        "Savings",
         "Travel",
         "Loan",
         "Bills",
         "Other"
-    ];
+    ].sort();
 
     const handleCategoryChange = (value: string) => {
         setCategory(value);
