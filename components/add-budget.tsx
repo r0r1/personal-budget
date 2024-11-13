@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Plus, Edit2, Calendar } from "lucide-react"
+import { useState, useRef } from "react"
+import { Plus, Edit2, Calendar, Upload, X } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import { Button } from "./ui/button"
@@ -21,10 +21,10 @@ type Item = {
   type: "income" | "expense"
   category: string
   recurrence: "once" | "daily" | "weekly" | "biweekly" | "monthly" | "yearly"
-  recurrenceDate: Date | null
+  recurrenceDate: string | null
   note: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
 }
 
 interface AddBudgetProps {
@@ -39,12 +39,33 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
   const [type, setType] = useState<"income" | "expense">(editingItem?.type || "income")
   const [category, setCategory] = useState<string | null>(editingItem?.category || null)
   const [recurrence, setRecurrence] = useState<"once" | "daily" | "weekly" | "biweekly" | "monthly" | "yearly">(editingItem?.recurrence || "once")
-  const [recurrenceDate, setRecurrenceDate] = useState<Date | null>(editingItem?.recurrenceDate || null)
+  const [recurrenceDate, setRecurrenceDate] = useState<Date | null>(editingItem?.recurrenceDate ? new Date(editingItem.recurrenceDate) : null)
   const [note, setNote] = useState(editingItem?.note || "")
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'decimal' }).format(amount);
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (files) {
+      const newFiles = Array.from(files)
+      const validFiles = newFiles.filter(file => {
+        const isValid = file.type.match(/^(image\/.*|application\/pdf|application\/msword|application\/vnd.openxmlformats-officedocument.wordprocessingml.document)$/)
+        if (!isValid) {
+          toast.error(`Invalid file type: ${file.name}. Only images, PDFs, and DOC/DOCX files are allowed.`)
+        }
+        return isValid
+      })
+      setSelectedFiles(prev => [...prev, ...validFiles])
+    }
+  }
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async () => {
@@ -60,22 +81,28 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
 
     setIsLoading(true)
     try {
+      const formData = new FormData()
+      formData.append('data', JSON.stringify({
+        name,
+        amount: parseFloat(amount.replace(/,/g, '')),
+        type,
+        category,
+        recurrence,
+        recurrenceDate: recurrenceDate?.toISOString() || null,
+        note,
+      }))
+
+      selectedFiles.forEach((file, index) => {
+        formData.append(`file${index}`, file)
+      })
+
       const url = editingItem ? `/api/budget-items/${editingItem.id}` : "/api/budget-items"
       const method = editingItem ? "PUT" : "POST"
 
       const response = await fetch(url, {
         method,
         credentials: 'include',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          amount: parseFloat(amount.replace(/,/g, '')),
-          type,
-          category,
-          recurrence,
-          recurrenceDate,
-          note,
-        }),
+        body: formData,
       })
       
       if (!response.ok) {
@@ -106,7 +133,7 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
         }}>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Name *</Label>
               <Input 
                 id="name" 
                 value={name} 
@@ -116,7 +143,7 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">Amount *</Label>
               <Input
                 id="amount"
                 type="text"
@@ -134,7 +161,7 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="type">Type</Label>
+              <Label htmlFor="type">Type *</Label>
               <Select value={type} onValueChange={(value: "income" | "expense") => setType(value)}>
                 <SelectTrigger id="type">
                   <SelectValue placeholder="Select type" />
@@ -149,7 +176,7 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
               <CategoryBudget onChange={setCategory} value={category} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="recurrence">Recurrence</Label>
+              <Label htmlFor="recurrence">Recurrence *</Label>
               <Select
                 value={recurrence}
                 onValueChange={(value: "once" | "daily" | "weekly" | "biweekly" | "monthly" | "yearly") => setRecurrence(value)}
@@ -203,6 +230,48 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
               onChange={(e) => setNote(e.target.value)}
               placeholder="Add any additional information here"
             />
+          </div>
+          <div className="grid gap-2">
+            <Label className="flex items-center gap-2">
+              Attachments (Optional)
+              <span className="text-xs text-muted-foreground">Images, PDFs, DOC/DOCX files</span>
+            </Label>
+            <div className="flex flex-col gap-4">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                multiple
+                accept="image/*,.pdf,.doc,.docx"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full"
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Upload Files
+              </Button>
+              {selectedFiles.length > 0 && (
+                <div className="grid gap-2">
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 border rounded">
+                      <span className="truncate">{file.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </form>
       </CardContent>

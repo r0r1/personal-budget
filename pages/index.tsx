@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { BudgetPlanner } from "@/components/components-budget-planner"
 import { LandingPage } from "@/components/landing-page"
+import Logo from "@/components/Logo"
 
 export default function Home() {
   const { data: session, status } = useSession()
@@ -15,20 +16,12 @@ export default function Home() {
     return <LandingPage />
   }
 
-  if (!session) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Button onClick={() => signIn("google")}>Sign in with Google</Button>
-      </div>
-    )
-  }
-
   return (
     <div className="container mx-auto p-4">
       <header className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">SmallBudget</h1>
+        <Logo />
         <Link href="/profile">
-          <Button variant="outline">View Profile</Button>
+          <Button variant="secondary">View Profile</Button>
         </Link>
       </header>
       <BudgetPlanner />

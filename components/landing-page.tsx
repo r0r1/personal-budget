@@ -4,14 +4,19 @@ import { Button } from "./ui/button"
 import { Card, CardContent } from "./ui/card"
 import { signIn } from "next-auth/react"
 import { ChartBar, PiggyBank, Bell, ArrowRight, Calendar, Shield } from "lucide-react"
+import Image from "next/image"
+import Logo from "./Logo"
 
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Hero Section */}
       <div className="container mx-auto px-4 pt-20 pb-16 text-center">
+        <div className="flex items-center justify-center mb-8">
+          <Logo />
+        </div>
         <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl mb-6">
-          Take Control of Your <span className="text-blue-600">Finances</span>
+          Take Control of Your <span className="text-yellow-500">Finances</span>
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
           Track your income and expenses, set budgets, and achieve your financial goals with our simple yet powerful budgeting tool.
@@ -120,7 +125,7 @@ export function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-gray-200 py-8">
         <div className="container mx-auto px-4 text-center text-gray-600">
-          <p>© {new Date().getFullYear()} Personal Budget. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} SmallBudget. All rights reserved.</p>
         </div>
       </footer>
     </div>

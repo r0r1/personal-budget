@@ -66,4 +66,15 @@ model BudgetItem {
   updatedAt      DateTime @updatedAt
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attachments    FileAttachment[]
+}
+
+model FileAttachment {
+  id           String     @id @default(cuid())
+  filename     String
+  fileType     String
+  fileUrl      String
+  createdAt    DateTime   @default(now())
+  budgetItemId String
+  budgetItem   BudgetItem @relation(fields: [budgetItemId], references: [id], onDelete: Cascade)
 }

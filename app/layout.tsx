@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "../components/ui/toaster";
 import "./globals.css";
+import Image from "next/image";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -18,7 +19,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Personal Budget App",
+  title: "SmallBudget",
   description: "Manage your personal finances effectively",
 };
 
@@ -31,6 +32,20 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="min-h-screen bg-background font-sans antialiased">
         <div className="relative flex min-h-screen flex-col">
+          <header className="border-b">
+            <div className="container mx-auto py-4 px-6 flex items-center">
+              <div className="flex items-center">
+                <Image
+                  src="/images/logo/small-budget.png"
+                  alt="SmallBudget Logo"
+                  width={40}
+                  height={40}
+                  className="mr-2"
+                />
+                <span className="text-xl font-bold">SmalslBudget</span>
+              </div>
+            </div>
+          </header>
           <div className="flex-1 flex-col">
             {children}
           </div>

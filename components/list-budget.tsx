@@ -16,10 +16,10 @@ type Item = {
   type: "income" | "expense"
   category: string
   recurrence: "once" | "daily" | "weekly" | "biweekly" | "monthly" | "yearly"
-  recurrenceDate: Date | null
+  recurrenceDate: string | null // Changed from Date to string since it comes as ISO string from API
   note: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string // Changed from Date to string
+  updatedAt: string // Changed from Date to string
 }
 
 interface ListBudgetProps {
@@ -33,6 +33,15 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const itemsPerPage = 3
+
+  const parseNote = (note: string): string => {
+    try {
+      const parsed = JSON.parse(note)
+      return parsed.text || ''
+    } catch {
+      return note || ''
+    }
+  }
   
   // Sort items by created date
   const sortedItems = [...items].sort((a, b) => {
@@ -235,49 +244,57 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
         </CardHeader>
         <CardContent>
           <ul className="space-y-4 min-h-[400px]">
-            {currentItems.map((item) => (
-              <li key={item.id} className="flex flex-col space-y-2 border-b pb-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold">{item.name}</span>
-                  <span className={`${item.type === "income" ? "text-green-600" : "text-red-600"}`}>
-                    IDR {formatAmount(item.amount)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded-full">
-                    {item.category}
-                  </span>
-                  <span>{item.recurrence}</span>
-                </div>
-                {item.note && (
-                  <p className="text-sm text-muted-foreground">Note: {item.note}</p>
-                )}
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  {item.recurrence !== 'once' && item.recurrenceDate && (
-                    <span>Next: {format(new Date(item.recurrenceDate), "MMM d, yyyy")}</span>
+            {currentItems.map((item) => {
+              const noteText = parseNote(item.note)
+              return (
+                <li key={item.id} className="flex flex-col space-y-2 border-b pb-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold">{item.name}</span>
+                    <span className={`${item.type === "income" ? "text-green-600" : "text-red-600"}`}>
+                      IDR {formatAmount(item.amount)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded-full">
+                      {item.category}
+                    </span>
+                    <span>{item.recurrence}</span>
+                  </div>
+                  {noteText && (
+                    <p className="text-sm text-muted-foreground">Note: {noteText}</p>
                   )}
-                  <span>Created: {format(new Date(item.createdAt), "MMM yyyy")}</span>
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => onEdit(item)}
-                    disabled={isLoading}
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => removeItem(item.id)}
-                    disabled={isLoading}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    {item.recurrence !== 'once' && item.recurrenceDate && (
+                      <span>Next: {format(new Date(item.recurrenceDate), "MMM d, yyyy")}</span>
+                    )}
+                    <span>Created: {format(new Date(item.createdAt), "MMM d, yyyy")}</span>
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => onEdit(item)}
+                      disabled={isLoading}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => removeItem(item.id)}
+                      disabled={isLoading}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </li>
+              )
+            })}
+            {currentItems.length === 0 && (
+              <li className="text-center text-muted-foreground py-8">
+                No budget items found
               </li>
-            ))}
+            )}
           </ul>
           {totalPages > 1 && (
             <div className="flex justify-between items-center mt-4 pt-4 border-t">

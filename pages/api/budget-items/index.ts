@@ -1,72 +1,144 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
-import { PrismaClient } from '@prisma/client'
 import { authOptions } from '../auth/[...nextauth]'
+import prisma from '../../../lib/prisma'
+import { IncomingForm } from 'formidable'
+import fs from 'fs/promises'
+import path from 'path'
 
-const prisma = new PrismaClient()
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Disable SSL certificate validation for this request
-  if (process.env.NODE_ENV === "development") {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+// Split routes for GET and POST
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  // Handle GET requests with normal body parser
+  if (req.method === 'GET') {
+    return handleGet(req, res)
+  }
+  
+  // Handle POST requests with formidable
+  if (req.method === 'POST') {
+    return handlePost(req, res)
   }
 
-  // Get session using getServerSession
-  const session = await getServerSession(req, res, authOptions);
+  res.setHeader('Allow', ['GET', 'POST'])
+  return res.status(405).json({ message: `Method ${req.method} Not Allowed` })
+}
 
-  if (!session || !session.user) {
-    return res.status(401).json({ message: 'Unauthorized' });
+// Configure bodyParser only for POST requests
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
+
+async function handleGet(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const session = await getServerSession(req, res, authOptions)
+    console.log('Session in GET:', session) // Debug log
+
+    if (!session?.user?.id) {
+      console.log('No session or user ID') // Debug log
+      return res.status(401).json({ message: 'Unauthorized' })
+    }
+
+    console.log('Fetching items for user:', session.user.id) // Debug log
+    const items = await prisma.budgetItem.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    console.log('Found items:', items.length) // Debug log
+    return res.status(200).json(items)
+  } catch (error) {
+    console.error('Error in GET:', error)
+    return res.status(500).json({ message: 'Internal server error' })
   }
+}
 
-  switch (req.method) {
-    case 'GET':
-      try {
-        const items = await prisma.budgetItem.findMany({
-          where: { userId: session.user.id },
-        });
-        res.status(200).json(items);
-      } catch (error) {
-        console.error('Error fetching budget items:', error);
-        res.status(500).json({ message: 'Error fetching budget items', error: error instanceof Error ? error.message : 'Unknown error' });
-      }
-      break;
+async function handlePost(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const session = await getServerSession(req, res, authOptions)
+    if (!session?.user?.id) {
+      return res.status(401).json({ message: 'Unauthorized' })
+    }
 
-    case 'POST':
-      try {
-        const { name, amount, type, category, recurrence, recurrenceDate, note } = req.body;
-        
-        // Validate required fields
-        if (!name || amount === undefined || !type || !category || !recurrence) {
-          return res.status(400).json({ message: 'Missing required fields' });
+    const form = new IncomingForm({
+      multiples: true,
+      keepExtensions: true,
+    })
+
+    const [fields, files] = await new Promise<[any, any]>((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err)
+        resolve([fields, files])
+      })
+    })
+
+    const data = JSON.parse(fields.data as string)
+    const attachments = []
+
+    // Process files if any
+    for (let i = 0; files[`file${i}`]; i++) {
+      const file = files[`file${i}`]
+      if (file) {
+        try {
+          const fileUrl = await saveFile(file)
+          attachments.push({
+            filename: file.originalFilename || 'unnamed',
+            fileType: file.mimetype || 'application/octet-stream',
+            fileUrl,
+          })
+        } catch (error) {
+          console.error(`Error processing file ${i}:`, error)
         }
-
-        // Validate recurrenceDate is provided when recurrence is not "once"
-        if (recurrence !== 'once' && !recurrenceDate) {
-          return res.status(400).json({ message: 'Recurrence date is required for recurring items' });
-        }
-
-        const newItem = await prisma.budgetItem.create({
-          data: {
-            name,
-            amount: parseFloat(amount.toString()),
-            type,
-            category,
-            recurrence,
-            // Only set recurrenceDate if recurrence is not "once"
-            recurrenceDate: recurrence === 'once' ? null : new Date(recurrenceDate),
-            note: note || '',
-            userId: session.user.id,
-          },
-        });
-        res.status(201).json(newItem);
-      } catch (error) {
-        console.error('Error creating budget item:', error);
-        res.status(500).json({ message: 'Error creating budget item', error: error instanceof Error ? error.message : 'Unknown error' });
       }
-      break;
+    }
 
-    default:
-      res.setHeader('Allow', ['GET', 'POST']);
-      res.status(405).end(`Method ${req.method} Not Allowed`);
+    const noteWithAttachments = {
+      text: data.note || '',
+      attachments,
+    }
+
+    const budgetItem = await prisma.budgetItem.create({
+      data: {
+        name: data.name,
+        amount: data.amount,
+        type: data.type,
+        category: data.category,
+        recurrence: data.recurrence,
+        note: JSON.stringify(noteWithAttachments),
+        userId: session.user.id,
+        recurrenceDate: data.recurrenceDate ? new Date(data.recurrenceDate) : null,
+      },
+    })
+
+    return res.status(200).json({
+      ...budgetItem,
+      note: noteWithAttachments,
+    })
+  } catch (error) {
+    console.error('Error in POST:', error)
+    return res.status(500).json({ message: 'Internal server error' })
+  }
+}
+
+// Helper function to save files
+async function saveFile(file: any): Promise<string> {
+  const uploadDir = path.join(process.cwd(), 'public', 'uploads')
+  
+  try {
+    await fs.mkdir(uploadDir, { recursive: true })
+    
+    const uniqueFilename = `${Date.now()}-${file.originalFilename || 'unnamed'}`
+    const newPath = path.join(uploadDir, uniqueFilename)
+    
+    await fs.copyFile(file.filepath, newPath)
+    await fs.unlink(file.filepath)
+    
+    return `/uploads/${uniqueFilename}`
+  } catch (error) {
+    console.error('Error saving file:', error)
+    throw new Error('Failed to save file')
   }
 }
