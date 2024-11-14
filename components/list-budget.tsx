@@ -8,23 +8,11 @@ import { Button } from "./ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
-
-type Item = {
-  id: string
-  name: string
-  amount: number
-  type: "income" | "expense"
-  category: string
-  recurrence: "once" | "daily" | "weekly" | "biweekly" | "monthly" | "yearly"
-  recurrenceDate: string | null // Changed from Date to string since it comes as ISO string from API
-  note: string
-  createdAt: string // Changed from Date to string
-  updatedAt: string // Changed from Date to string
-}
+import { BudgetItem } from "../types/budget"
 
 interface ListBudgetProps {
-  items: Item[]
-  onEdit: (item: Item) => void
+  items: BudgetItem[]
+  onEdit: (item: BudgetItem) => void
   onRefresh: () => void
 }
 
@@ -32,14 +20,15 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const itemsPerPage = 3
+  const itemsPerPage = 10
 
   const parseNote = (note: string): string => {
+    if (!note) return ''
     try {
       const parsed = JSON.parse(note)
       return parsed.text || ''
     } catch {
-      return note || ''
+      return note
     }
   }
   
@@ -91,9 +80,9 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
     const balance = totalIncome - totalExpenses
 
     doc.text(`Total Income: IDR ${formatAmount(totalIncome)}`, 14, 35)
-    doc.setTextColor(255, 0, 0); // Set text color to red for expenses
-    doc.text(`Total Expenses: IDR ${formatAmount(totalExpenses)}`, 14, 42) // Added minus for expenses
-    doc.setTextColor(0, 0, 0); // Reset text color to black for balance
+    doc.setTextColor(255, 0, 0)
+    doc.text(`Total Expenses: IDR ${formatAmount(totalExpenses)}`, 14, 42)
+    doc.setTextColor(0, 0, 0)
     doc.text(`Balance: IDR ${formatAmount(balance)}`, 14, 49)
 
     // Prepare table data
@@ -223,7 +212,7 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Budget Items</CardTitle>
+          <CardTitle>Budget Items ({items.length})</CardTitle>
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -243,7 +232,7 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <ul className="space-y-4 min-h-[400px]">
+          <ul className="space-y-4 min-h-[400px] max-h-[600px] overflow-y-auto">
             {currentItems.map((item) => {
               const noteText = parseNote(item.note)
               return (
@@ -262,6 +251,11 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
                   </div>
                   {noteText && (
                     <p className="text-sm text-muted-foreground">Note: {noteText}</p>
+                  )}
+                  {item.attachments && item.attachments.length > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      Attachments: {item.attachments.length} file(s)
+                    </div>
                   )}
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     {item.recurrence !== 'once' && item.recurrenceDate && (

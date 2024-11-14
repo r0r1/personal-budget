@@ -33,7 +33,8 @@ export default function ProfilePage() {
           <Button variant="secondary">Home</Button>
         </Link>
       </header>
-      <Card className="w-full max-w-md mx-auto">
+      
+      <Card className="w-full max-w-md mx-auto mb-8">
         <CardHeader>
           <CardTitle>User Profile</CardTitle>
           <CardDescription>Your account information</CardDescription>

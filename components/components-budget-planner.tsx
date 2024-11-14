@@ -3,31 +3,19 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Plus, List } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { AddBudget } from "@/components/add-budget"
-import { ListBudget } from "@/components/list-budget"
+import { Button } from "./ui/button"
+import { AddBudget } from "./add-budget"
+import { ListBudget } from "./list-budget"
 import { toast } from "sonner"
-
-type Item = {
-  id: string
-  name: string
-  amount: number
-  type: "income" | "expense"
-  category: string
-  recurrence: "once" | "daily" | "weekly" | "biweekly" | "monthly" | "yearly"
-  recurrenceDate: string | null
-  note: string
-  createdAt: string
-  updatedAt: string
-}
+import { BudgetItem } from "../types/budget"
 
 type View = "list" | "add"
 
 export function BudgetPlanner() {
   const { data: session, status } = useSession()
-  const [items, setItems] = useState<Item[]>([])
+  const [items, setItems] = useState<BudgetItem[]>([])
   const [currentView, setCurrentView] = useState<View>("list")
-  const [editingItem, setEditingItem] = useState<Item | null>(null)
+  const [editingItem, setEditingItem] = useState<BudgetItem | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,12 +41,34 @@ export function BudgetPlanner() {
       })
       
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Error response:', errorData) // Debug log
         throw new Error(`Failed to fetch budget items: ${response.statusText}`)
       }
       
       const data = await response.json()
       console.log('Fetched items:', data) // Debug log
-      setItems(data)
+      
+      // Validate the data structure
+      if (!Array.isArray(data)) {
+        console.error('Invalid data structure:', data) // Debug log
+        throw new Error('Invalid response format')
+      }
+      
+      // Transform and validate each item
+      const validatedItems = data.map(item => {
+        if (!item.id || !item.name || typeof item.amount !== 'number') {
+          console.error('Invalid item structure:', item) // Debug log
+          throw new Error('Invalid item format')
+        }
+        return {
+          ...item,
+          attachments: Array.isArray(item.attachments) ? item.attachments : []
+        } as BudgetItem
+      })
+      
+      setItems(validatedItems)
+      console.log('Items set:', validatedItems.length) // Debug log
     } catch (error) {
       console.error("Error fetching budget items:", error)
       setError(error instanceof Error ? error.message : 'Failed to load budget items')
@@ -68,7 +78,7 @@ export function BudgetPlanner() {
     }
   }
 
-  const handleEdit = (item: Item) => {
+  const handleEdit = (item: BudgetItem) => {
     setEditingItem(item)
     setCurrentView("add")
   }
@@ -88,7 +98,7 @@ export function BudgetPlanner() {
     return (
       <div className="container mx-auto p-4">
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center text-muted-foreground">Loading...</div>
+          <div className="text-center text-muted-foreground">Loading budget items...</div>
         </div>
       </div>
     )
