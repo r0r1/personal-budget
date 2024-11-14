@@ -2,8 +2,9 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]'
 import prisma from '../../../../../lib/prisma'
-import fs from 'fs/promises'
-import path from 'path'
+import { getFileAdapter } from '../../../../../lib/file-adapter'
+
+const fileAdapter = getFileAdapter()
 
 export default async function handler(
   req: NextApiRequest,
@@ -48,10 +49,9 @@ export default async function handler(
 
       const attachment = budgetItem.attachments[0]
 
-      // Delete the file from the filesystem
+      // Delete the file using the file adapter
       try {
-        const filePath = path.join(process.cwd(), 'public', attachment.fileUrl)
-        await fs.unlink(filePath)
+        await fileAdapter.deleteFile(attachment.fileUrl)
       } catch (error) {
         console.error('Error deleting file:', error)
         // Continue with database deletion even if file deletion fails

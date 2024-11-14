@@ -3,8 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
 import prisma from '../../../lib/prisma'
 import { IncomingForm } from 'formidable'
-import fs from 'fs/promises'
-import path from 'path'
+import { getFileAdapter } from '../../../lib/file-adapter'
 
 export const config = {
   api: {
@@ -12,24 +11,7 @@ export const config = {
   },
 }
 
-async function saveFile(file: any): Promise<string> {
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-  
-  try {
-    await fs.mkdir(uploadDir, { recursive: true })
-    
-    const uniqueFilename = `${Date.now()}-${file.originalFilename || 'unnamed'}`
-    const newPath = path.join(uploadDir, uniqueFilename)
-    
-    await fs.copyFile(file.filepath, newPath)
-    await fs.unlink(file.filepath)
-    
-    return `/uploads/${uniqueFilename}`
-  } catch (error) {
-    console.error('Error saving file:', error)
-    throw new Error('Failed to save file')
-  }
-}
+const fileAdapter = getFileAdapter()
 
 export default async function handler(
   req: NextApiRequest,
@@ -54,11 +36,24 @@ export default async function handler(
         where: {
           id: id,
           userId: session.user.id
+        },
+        include: {
+          attachments: true
         }
       })
 
       if (!item) {
         return res.status(404).json({ message: 'Item not found' })
+      }
+
+      // Delete all associated files
+      for (const attachment of item.attachments) {
+        try {
+          await fileAdapter.deleteFile(attachment.fileUrl)
+        } catch (error) {
+          console.error('Error deleting file:', error)
+          // Continue with deletion even if file deletion fails
+        }
       }
 
       // Delete the item and its attachments
@@ -132,7 +127,7 @@ export default async function handler(
         const file = files[`file${i}`]
         if (file) {
           try {
-            const fileUrl = await saveFile(file)
+            const fileUrl = await fileAdapter.saveFile(file)
             attachments.push({
               filename: file.originalFilename || 'unnamed',
               fileType: file.mimetype || 'application/octet-stream',

@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { Edit2, Trash2, ChevronLeft, ChevronRight, Download } from "lucide-react"
+import { Edit2, Trash2, ChevronLeft, ChevronRight, Download, Eye } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { DetailBudget } from "./detail-budget"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { BudgetItem } from "../types/budget"
@@ -20,7 +21,8 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const itemsPerPage = 10
+  const [selectedItem, setSelectedItem] = useState<BudgetItem | null>(null)
+  const itemsPerPage = 4
 
   const parseNote = (note: string): string => {
     if (!note) return ''
@@ -146,177 +148,194 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
   }
 
   return (
-    <div className="grid gap-8 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Budget Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex justify-between">
-              <span>Total Income:</span>
-              <span className="text-green-600">IDR {formatAmount(totalIncome)}</span>
+    <>
+      <div className="grid gap-8 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Budget Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <span>Total Income:</span>
+                <span className="text-green-600">IDR {formatAmount(totalIncome)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Total Expenses:</span>
+                <span className="text-red-600">IDR {formatAmount(Number(totalExpenses.toFixed(2)))}</span>
+              </div>
+              <div className="flex justify-between font-bold">
+                <span>Balance:</span>
+                <span className={balance >= 0 ? "text-green-600" : "text-red-600"}>
+                  IDR {formatAmount(Number(balance.toFixed(2)))}
+                </span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span>Total Expenses:</span>
-              <span className="text-red-600">IDR {formatAmount(Number(totalExpenses.toFixed(2)))}</span>
-            </div>
-            <div className="flex justify-between font-bold">
-              <span>Balance:</span>
-              <span className={balance >= 0 ? "text-green-600" : "text-red-600"}>
-                IDR {formatAmount(Number(balance.toFixed(2)))}
-              </span>
-            </div>
-          </div>
-          <div className="mt-8">
-            <h4 className="mb-4 text-sm font-semibold">Budget Breakdown</h4>
-            <div className="relative h-64 w-64 mx-auto">
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                {categoryData.map((catData, index) => {
-                  const percentage = Number(catData.percentage)
-                  const offset = categoryData.slice(0, index).reduce((sum, cat) => {
-                    return sum + Number(cat.percentage)
-                  }, 0)
-                  return (
-                    <circle
-                      key={catData.category}
-                      r="15.9"
-                      cx="50"
-                      cy="50"
-                      fill="transparent"
-                      stroke={`hsl(${index * 137.508}, 70%, 50%)`}
-                      strokeWidth="31.8"
-                      strokeDasharray={`${percentage} ${100 - percentage}`}
-                      strokeDashoffset={-offset}
+            <div className="mt-8">
+              <h4 className="mb-4 text-sm font-semibold">Budget Breakdown</h4>
+              <div className="relative h-64 w-64 mx-auto">
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  {categoryData.map((catData, index) => {
+                    const percentage = Number(catData.percentage)
+                    const offset = categoryData.slice(0, index).reduce((sum, cat) => {
+                      return sum + Number(cat.percentage)
+                    }, 0)
+                    return (
+                      <circle
+                        key={catData.category}
+                        r="15.9"
+                        cx="50"
+                        cy="50"
+                        fill="transparent"
+                        stroke={`hsl(${index * 137.508}, 70%, 50%)`}
+                        strokeWidth="31.8"
+                        strokeDasharray={`${percentage} ${100 - percentage}`}
+                        strokeDashoffset={-offset}
+                      />
+                    )
+                  })}
+                </svg>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {categoryData.map((catData, index) => (
+                  <div key={catData.category} className="flex items-center">
+                    <div
+                      className="w-3 h-3 mr-2 rounded-full"
+                      style={{ backgroundColor: `hsl(${index * 137.508}, 70%, 50%)` }}
                     />
-                  )
-                })}
-              </svg>
+                    <span className="text-sm">
+                      {catData.category} ({catData.percentage}%)
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              {categoryData.map((catData, index) => (
-                <div key={catData.category} className="flex items-center">
-                  <div
-                    className="w-3 h-3 mr-2 rounded-full"
-                    style={{ backgroundColor: `hsl(${index * 137.508}, 70%, 50%)` }}
-                  />
-                  <span className="text-sm">
-                    {catData.category} ({catData.percentage}%)
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Budget Items ({items.length})</CardTitle>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleSortOrder}
-            >
-              Sort {sortOrder === 'desc' ? '↑' : '↓'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportToPDF}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export PDF
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-4 min-h-[400px] max-h-[600px] overflow-y-auto">
-            {currentItems.map((item) => {
-              const noteText = parseNote(item.note)
-              return (
-                <li key={item.id} className="flex flex-col space-y-2 border-b pb-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">{item.name}</span>
-                    <span className={`${item.type === "income" ? "text-green-600" : "text-red-600"}`}>
-                      IDR {formatAmount(item.amount)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded-full">
-                      {item.category}
-                    </span>
-                    <span>{item.recurrence}</span>
-                  </div>
-                  {noteText && (
-                    <p className="text-sm text-muted-foreground">Note: {noteText}</p>
-                  )}
-                  {item.attachments && item.attachments.length > 0 && (
-                    <div className="text-sm text-muted-foreground">
-                      Attachments: {item.attachments.length} file(s)
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    {item.recurrence !== 'once' && item.recurrenceDate && (
-                      <span>Next: {format(new Date(item.recurrenceDate), "MMM d, yyyy")}</span>
-                    )}
-                    <span>Created: {format(new Date(item.createdAt), "MMM d, yyyy")}</span>
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => onEdit(item)}
-                      disabled={isLoading}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => removeItem(item.id)}
-                      disabled={isLoading}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </li>
-              )
-            })}
-            {currentItems.length === 0 && (
-              <li className="text-center text-muted-foreground py-8">
-                No budget items found
-              </li>
-            )}
-          </ul>
-          {totalPages > 1 && (
-            <div className="flex justify-between items-center mt-4 pt-4 border-t">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Budget Items</CardTitle>
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={goToPrevPage}
-                disabled={currentPage === 1}
+                onClick={toggleSortOrder}
               >
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Previous
+                Sort {sortOrder === 'desc' ? '↑' : '↓'}
               </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
-              </span>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages}
+                onClick={exportToPDF}
               >
-                Next
-                <ChevronRight className="h-4 w-4 ml-2" />
+                <Download className="h-4 w-4 mr-2" />
+                Export PDF
               </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-4 min-h-[400px] max-h-[600px] overflow-y-auto">
+              {currentItems.map((item) => {
+                const noteText = parseNote(item.note)
+                return (
+                  <li key={item.id} className="flex flex-col space-y-2 border-b pb-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">{item.name}</span>
+                      <span className={`${item.type === "income" ? "text-green-600" : "text-red-600"}`}>
+                        IDR {formatAmount(item.amount)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded-full">
+                        {item.category}
+                      </span>
+                      <span>{item.recurrence}</span>
+                    </div>
+                    {noteText && (
+                      <p className="text-sm text-muted-foreground">Note: {noteText}</p>
+                    )}
+                    {item.attachments && item.attachments.length > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        Attachments: {item.attachments.length} file(s)
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      {item.recurrence !== 'once' && item.recurrenceDate && (
+                        <span>Next: {format(new Date(item.recurrenceDate), "MMM d, yyyy")}</span>
+                      )}
+                      <span>Created: {format(new Date(item.createdAt), "MMM d, yyyy")}</span>
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setSelectedItem(item)}
+                        disabled={isLoading}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => onEdit(item)}
+                        disabled={isLoading}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => removeItem(item.id)}
+                        disabled={isLoading}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </li>
+                )
+              })}
+              {currentItems.length === 0 && (
+                <li className="text-center text-muted-foreground py-8">
+                  No budget items found
+                </li>
+              )}
+            </ul>
+            {totalPages > 1 && (
+              <div className="flex justify-between items-center mt-4 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToPrevPage}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {selectedItem && (
+        <DetailBudget
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
+    </>
   )
 }
