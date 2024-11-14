@@ -2,6 +2,34 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
 import prisma from '../../../lib/prisma'
+import { IncomingForm } from 'formidable'
+import fs from 'fs/promises'
+import path from 'path'
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
+
+async function saveFile(file: any): Promise<string> {
+  const uploadDir = path.join(process.cwd(), 'public', 'uploads')
+  
+  try {
+    await fs.mkdir(uploadDir, { recursive: true })
+    
+    const uniqueFilename = `${Date.now()}-${file.originalFilename || 'unnamed'}`
+    const newPath = path.join(uploadDir, uniqueFilename)
+    
+    await fs.copyFile(file.filepath, newPath)
+    await fs.unlink(file.filepath)
+    
+    return `/uploads/${uniqueFilename}`
+  } catch (error) {
+    console.error('Error saving file:', error)
+    throw new Error('Failed to save file')
+  }
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -72,8 +100,6 @@ export default async function handler(
   // Handle PUT request
   if (req.method === 'PUT') {
     try {
-      const data = req.body
-
       // First verify the item belongs to the user
       const existingItem = await prisma.budgetItem.findFirst({
         where: {
@@ -86,6 +112,38 @@ export default async function handler(
         return res.status(404).json({ message: 'Item not found' })
       }
 
+      const form = new IncomingForm({
+        multiples: true,
+        keepExtensions: true,
+      })
+
+      const [fields, files] = await new Promise<[any, any]>((resolve, reject) => {
+        form.parse(req, (err, fields, files) => {
+          if (err) reject(err)
+          resolve([fields, files])
+        })
+      })
+
+      const data = JSON.parse(fields.data as string)
+      const attachments = []
+
+      // Process files if any
+      for (let i = 0; files[`file${i}`]; i++) {
+        const file = files[`file${i}`]
+        if (file) {
+          try {
+            const fileUrl = await saveFile(file)
+            attachments.push({
+              filename: file.originalFilename || 'unnamed',
+              fileType: file.mimetype || 'application/octet-stream',
+              fileUrl,
+            })
+          } catch (error) {
+            console.error(`Error processing file ${i}:`, error)
+          }
+        }
+      }
+
       const updatedItem = await prisma.budgetItem.update({
         where: { id: id },
         data: {
@@ -96,6 +154,13 @@ export default async function handler(
           recurrence: data.recurrence,
           note: data.note,
           recurrenceDate: data.recurrenceDate ? new Date(data.recurrenceDate) : null,
+          attachments: {
+            create: attachments.map(attachment => ({
+              filename: attachment.filename,
+              fileType: attachment.fileType,
+              fileUrl: attachment.fileUrl,
+            })),
+          },
         },
         include: {
           attachments: true

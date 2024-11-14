@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Plus, Edit2, Calendar, Upload, X } from "lucide-react"
+import { Plus, Edit2, Calendar, Upload, X, FileIcon } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import { Button } from "./ui/button"
@@ -14,6 +14,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Calendar as CalendarComponent } from "./ui/calendar"
 import CategoryBudget from './form/category'
 
+type Attachment = {
+  id: string
+  filename: string
+  fileType: string
+  fileUrl: string
+}
+
 type Item = {
   id: string
   name: string
@@ -25,6 +32,7 @@ type Item = {
   note: string
   createdAt: string
   updatedAt: string
+  attachments?: Attachment[]
 }
 
 interface AddBudgetProps {
@@ -43,6 +51,7 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
   const [note, setNote] = useState(editingItem?.note || "")
   const [isLoading, setIsLoading] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [existingAttachments, setExistingAttachments] = useState<Attachment[]>(editingItem?.attachments || [])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const formatAmount = (amount: number) => {
@@ -68,6 +77,31 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
+  const removeExistingAttachment = async (attachmentId: string) => {
+    if (!editingItem?.id) return
+
+    try {
+      const response = await fetch(`/api/budget-items/${editingItem.id}/attachments/${attachmentId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete attachment')
+      }
+
+      setExistingAttachments(prev => prev.filter(att => att.id !== attachmentId))
+      toast.success('Attachment removed successfully')
+    } catch (error) {
+      console.error('Error removing attachment:', error)
+      toast.error('Failed to remove attachment')
+    }
+  }
+
+  const isImageFile = (fileType: string) => {
+    return fileType.startsWith('image/')
+  }
+
   const handleSubmit = async () => {
     if (!name || !amount || !category) {
       toast.error("Please fill in all required fields")
@@ -82,7 +116,7 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
     setIsLoading(true)
     try {
       const formData = new FormData()
-      formData.append('data', JSON.stringify({
+      const itemData = {
         name,
         amount: parseFloat(amount.replace(/,/g, '')),
         type,
@@ -90,10 +124,12 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
         recurrence,
         recurrenceDate: recurrenceDate?.toISOString() || null,
         note,
-      }))
+      }
+      formData.append('data', JSON.stringify(itemData))
 
+      // Properly append each file with a unique key
       selectedFiles.forEach((file, index) => {
-        formData.append(`file${index}`, file)
+        formData.append(`file${index}`, file, file.name)
       })
 
       const url = editingItem ? `/api/budget-items/${editingItem.id}` : "/api/budget-items"
@@ -254,11 +290,57 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
                 <Upload className="mr-2 h-4 w-4" />
                 Upload Files
               </Button>
+              
+              {/* Existing Attachments */}
+              {existingAttachments.length > 0 && (
+                <div className="grid gap-2">
+                  <Label>Existing Attachments</Label>
+                  {existingAttachments.map((attachment) => (
+                    <div key={attachment.id} className="flex items-center justify-between p-2 border rounded">
+                      <div className="flex items-center gap-2 flex-1">
+                        {isImageFile(attachment.fileType) ? (
+                          <div className="relative w-10 h-10">
+                            <img
+                              src={attachment.fileUrl}
+                              alt={attachment.filename}
+                              className="object-cover w-full h-full rounded"
+                            />
+                          </div>
+                        ) : (
+                          <FileIcon className="w-5 h-5" />
+                        )}
+                        <a
+                          href={attachment.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:underline truncate"
+                        >
+                          {attachment.filename}
+                        </a>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeExistingAttachment(attachment.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* New Files */}
               {selectedFiles.length > 0 && (
                 <div className="grid gap-2">
+                  <Label>New Files</Label>
                   {selectedFiles.map((file, index) => (
                     <div key={index} className="flex items-center justify-between p-2 border rounded">
-                      <span className="truncate">{file.name}</span>
+                      <div className="flex items-center gap-2">
+                        <FileIcon className="w-5 h-5" />
+                        <span className="truncate">{file.name}</span>
+                      </div>
                       <Button
                         type="button"
                         variant="ghost"
