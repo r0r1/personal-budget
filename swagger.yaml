@@ -1,0 +1,374 @@
+openapi: 3.0.0
+info:
+  title: Personal Budget API
+  description: API documentation for Personal Budget application
+  version: 1.0.0
+
+servers:
+  - url: /api
+    description: Next.js API routes
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth.js session token for web clients
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: API key for mobile clients
+
+  schemas:
+    BudgetItem:
+      type: object
+      required:
+        - name
+        - amount
+        - type
+        - category
+        - recurrence
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Groceries"
+        amount:
+          type: number
+          format: float
+          example: 150.50
+        type:
+          type: string
+          enum: [income, expense]
+          example: "expense"
+        category:
+          type: string
+          example: "Food"
+        recurrence:
+          type: string
+          enum: [once, daily, weekly, monthly, yearly]
+          example: "monthly"
+        recurrenceDate:
+          type: string
+          format: date-time
+          nullable: true
+        note:
+          type: string
+          example: "Monthly grocery budget"
+        userId:
+          type: string
+          format: uuid
+    
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Error message"
+
+security:
+  - sessionAuth: []
+  - apiKeyAuth: []
+
+paths:
+  /auth/mobile:
+    post:
+      summary: Generate API key for mobile app
+      tags:
+        - Authentication
+      description: Generates a new API key for authenticated users to use in mobile app
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: API key generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiKey:
+                    type: string
+                    description: Generated API key
+                  userId:
+                    type: string
+                    format: uuid
+                    description: User ID
+        '401':
+          description: Unauthorized - User must be authenticated with session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/signin:
+    get:
+      summary: Sign in with Google
+      tags:
+        - Authentication
+      description: Redirects to Google OAuth sign-in page
+      responses:
+        '200':
+          description: Redirects to Google authentication
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/signout:
+    get:
+      summary: Sign out the current user
+      tags:
+        - Authentication
+      description: Ends the user's session
+      responses:
+        '200':
+          description: Successfully signed out
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/session:
+    get:
+      summary: Get current session
+      tags:
+        - Authentication
+      description: Returns the current user's session information
+      responses:
+        '200':
+          description: Current session information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      name:
+                        type: string
+                      email:
+                        type: string
+                        format: email
+                      image:
+                        type: string
+                        format: uri
+                  expires:
+                    type: string
+                    format: date-time
+        '401':
+          description: No active session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /budget-items:
+    get:
+      summary: Get all budget items for the authenticated user
+      tags:
+        - Budget Items
+      responses:
+        '200':
+          description: List of budget items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BudgetItem'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      summary: Create a new budget item
+      tags:
+        - Budget Items
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - amount
+                - type
+                - category
+                - recurrence
+              properties:
+                name:
+                  type: string
+                amount:
+                  type: number
+                type:
+                  type: string
+                  enum: [income, expense]
+                category:
+                  type: string
+                recurrence:
+                  type: string
+                  enum: [once, daily, weekly, monthly, yearly]
+                recurrenceDate:
+                  type: string
+                  format: date-time
+                note:
+                  type: string
+      responses:
+        '201':
+          description: Budget item created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetItem'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+
+  /budget-items/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Budget item ID
+    
+    put:
+      summary: Update a budget item
+      tags:
+        - Budget Items
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetItem'
+      responses:
+        '200':
+          description: Budget item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetItem'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+    
+    delete:
+      summary: Delete a budget item
+      tags:
+        - Budget Items
+      responses:
+        '204':
+          description: Budget item deleted
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+
+  /recurring-budget-items:
+    post:
+      summary: Process recurring budget items
+      tags:
+        - Recurring Budget
+      responses:
+        '200':
+          description: Recurring items processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  createdItems:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BudgetItem'
+        '405':
+          description: Method not allowed
+        '500':
+          description: Server error
+
+  /user/update-profile:
+    post:
+      summary: Update user profile
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+        '405':
+          description: Method not allowed
+        '500':
+          description: Server error

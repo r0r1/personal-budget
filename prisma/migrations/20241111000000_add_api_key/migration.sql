@@ -1,0 +1,3 @@
+-- Add API key fields to User table
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "apiKey" TEXT UNIQUE;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "apiKeyUpdatedAt" TIMESTAMP(3);

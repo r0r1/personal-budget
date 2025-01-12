@@ -35,14 +35,30 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  budgetItems   BudgetItem[]
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  apiKey         String?   @unique
+  apiKeyUpdatedAt DateTime?
+  accounts       Account[]
+  sessions       Session[]
+  budgetItems    BudgetItem[]
+  oauthApps      OAuthApp[]
+}
+
+model OAuthApp {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  clientId     String   @unique @default(cuid())
+  clientSecret String   @unique @default(uuid())
+  redirectUris String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {

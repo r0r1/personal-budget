@@ -15,14 +15,6 @@ export default function Home() {
     return <LandingPage />
   }
 
-  if (!session) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Button onClick={() => signIn("google")}>Sign in with Google</Button>
-      </div>
-    )
-  }
-
   return (
     <div className="container mx-auto p-4">
       <header className="flex justify-between items-center mb-8">

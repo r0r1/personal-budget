@@ -17,6 +17,8 @@
     "@radix-ui/react-popover": "1.1.2",
     "@radix-ui/react-select": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.0",
+    "@types/swagger-ui-express": "^4.1.7",
+    "@types/yamljs": "^0.2.34",
     "@vercel/postgres": "^0.10.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -33,8 +35,10 @@
     "react-dom": "^18",
     "resend": "^4.0.1-alpha.0",
     "sonner": "^1.7.0",
+    "swagger-ui-express": "^5.0.1",
     "tailwind-merge": "^2.5.4",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@types/cron": "^2.4.3",

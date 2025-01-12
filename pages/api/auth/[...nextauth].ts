@@ -4,11 +4,9 @@ import { JWT } from "next-auth/jwt"
 import { Session } from "next-auth"
 import cors from '../../../lib/corsMiddleware'
 import { runMiddleware } from '../../../lib/corsMiddleware'
-import { PrismaClient } from "@prisma/client"
+import { prisma } from '../../../lib/prisma'
 import { NextApiResponse } from "next"
 import { NextApiRequest } from "next"
-
-const prisma = new PrismaClient()
 
 // Extend the built-in Session type
 declare module "next-auth" {
@@ -75,11 +73,33 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log('signIn', user, account, profile)
-      return true
+      try {
+        // Verify required fields
+        if (!user.email) {
+          console.error('Sign in failed: No email provided');
+          return false;
+        }
+
+        // Log authentication attempt
+        console.log('Authentication attempt:', {
+          email: user.email,
+          provider: account?.provider,
+          type: account?.type
+        });
+
+        return true;
+      } catch (error) {
+        console.error('Sign in error:', error);
+        return false;
+      }
     },
     async session({ session, token }): Promise<Session> {
-      if (session.user) {
+      try {
+        if (session.user) {
+        if (!token.sub) {
+          throw new Error('No user sub in token');
+        }
+
         // Get or create user
         const user = await getUserOrCreate(session);
         
@@ -88,15 +108,31 @@ export const authOptions: NextAuthOptions = {
 
         // Create session if it doesn't exist
         await createSessionIfNotExists(session, token);
-      }
 
-      return session
+        // Verify database connection by attempting to fetch the user
+        await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { id: true }
+        });
+        }
+
+        return session;
+      } catch (error) {
+        console.error('Session error:', error);
+        throw error; // Re-throw to trigger NextAuth error handling
+      }
     },
     async jwt({ token, account, profile }): Promise<JWT> {
-      if (account && profile) {
-        token.id = profile.sub
+      try {
+        if (account && profile) {
+          token.id = profile.sub;
+          token.sub = profile.sub; // Ensure sub is set for session handling
+        }
+        return token;
+      } catch (error) {
+        console.error('JWT error:', error);
+        throw error;
       }
-      return token
     },
   },
 }

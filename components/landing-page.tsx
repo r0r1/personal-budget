@@ -19,7 +19,9 @@ export function LandingPage() {
         <Button 
           size="lg" 
           className="text-lg px-8"
-          onClick={() => signIn()}
+          onClick={() => signIn("google", { callbackUrl: "/" }).catch(error => {
+            console.error("Sign in error:", error);
+          })}
         >
           Get Started Free
           <ArrowRight className="ml-2 h-5 w-5" />
@@ -109,7 +111,9 @@ export function LandingPage() {
           <Button 
             size="lg" 
             className="text-lg px-8"
-            onClick={() => signIn()}
+            onClick={() => signIn("google", { callbackUrl: "/" }).catch(error => {
+              console.error("Sign in error:", error);
+            })}
           >
             Start Budgeting Now
             <ArrowRight className="ml-2 h-5 w-5" />
