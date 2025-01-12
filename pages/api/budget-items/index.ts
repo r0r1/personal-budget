@@ -3,16 +3,18 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
 import prisma from '../../../lib/prisma'
 import { IncomingForm } from 'formidable'
+import { getFileAdapter } from '../../../lib/file-adapter'
 import fs from 'fs/promises'
-import path from 'path'
+
+type Attachment = {
+  filename: string;
+  fileType: string;
+  fileUrl: string;
+}
 
 type NoteWithAttachments = {
   text: string;
-  attachments: Array<{
-    filename: string;
-    fileType: string;
-    fileUrl: string;
-  }>;
+  attachments: Attachment[];
 }
 
 // Split routes for GET and POST
@@ -44,22 +46,10 @@ export const config = {
 async function handleGet(req: NextApiRequest, res: NextApiResponse) {
   try {
     const session = await getServerSession(req, res, authOptions)
-    console.log('Session in GET:', session) // Debug log
-
     if (!session?.user?.id) {
-      console.log('No session or user ID') // Debug log
       return res.status(401).json({ message: 'Unauthorized' })
     }
 
-    console.log('Fetching items for user:', session.user.id) // Debug log
-    
-    // First, get the count of items
-    const itemCount = await prisma.budgetItem.count({
-      where: { userId: session.user.id },
-    })
-    console.log('Total items count:', itemCount) // Debug log
-
-    // Then fetch the items with attachments
     const items = await prisma.budgetItem.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: 'desc' },
@@ -75,14 +65,6 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
         }
       },
     })
-
-    console.log('Found items:', items.length) // Debug log
-    
-    // Log first item as sample (with sensitive data removed)
-    if (items.length > 0) {
-      const sampleItem = { ...items[0], userId: '[REDACTED]' }
-      console.log('Sample item:', JSON.stringify(sampleItem, null, 2))
-    }
 
     // Transform items to include parsed note
     const transformedItems = items.map(item => {
@@ -106,14 +88,6 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
         recurrenceDate: item.recurrenceDate?.toISOString() || null,
       }
     })
-
-    console.log('Transformed items count:', transformedItems.length) // Debug log
-    if (transformedItems.length > 0) {
-      console.log('Sample transformed item:', JSON.stringify({ 
-        ...transformedItems[0],
-        userId: '[REDACTED]' 
-      }, null, 2))
-    }
 
     return res.status(200).json(transformedItems)
   } catch (error) {
@@ -142,29 +116,55 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     })
 
     const data = JSON.parse(fields.data as string)
-    const attachments = []
+    const attachments: Attachment[] = []
+    const fileAdapter = getFileAdapter()
 
     // Process files if any
+    const filePromises = []
     for (let i = 0; files[`file${i}`]; i++) {
       const file = files[`file${i}`]
-      if (file) {
+      if (file && file.filepath) {
         try {
-          const fileUrl = await saveFile(file)
-          attachments.push({
-            filename: file.originalFilename || 'unnamed',
-            fileType: file.mimetype || 'application/octet-stream',
-            fileUrl,
-          })
+          // Read the file content
+          const fileContent = await fs.readFile(file.filepath)
+          
+          // Create a File object from the buffer
+          const fileObject = {
+            filepath: file.filepath,
+            originalFilename: file.originalFilename,
+            mimetype: file.mimetype,
+            buffer: fileContent
+          }
+
+          // Add to promises array
+          filePromises.push(
+            fileAdapter.saveFile(fileObject)
+              .then(fileUrl => {
+                attachments.push({
+                  filename: file.originalFilename || 'unnamed',
+                  fileType: file.mimetype || 'application/octet-stream',
+                  fileUrl,
+                })
+              })
+              .finally(async () => {
+                // Clean up temp file
+                try {
+                  await fs.unlink(file.filepath)
+                } catch (error) {
+                  console.error('Error cleaning up temp file:', error)
+                }
+              })
+          )
         } catch (error) {
           console.error(`Error processing file ${i}:`, error)
         }
+      } else {
+        console.error(`File ${i} is undefined or has no filepath`)
       }
     }
 
-    const noteWithAttachments: NoteWithAttachments = {
-      text: data.note || '',
-      attachments,
-    }
+    // Wait for all file uploads to complete
+    await Promise.all(filePromises)
 
     const budgetItem = await prisma.budgetItem.create({
       data: {
@@ -173,7 +173,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
         type: data.type,
         category: data.category,
         recurrence: data.recurrence,
-        note: JSON.stringify(noteWithAttachments),
+        note: data.note,
         userId: session.user.id,
         recurrenceDate: data.recurrenceDate ? new Date(data.recurrenceDate) : null,
         attachments: {
@@ -200,7 +200,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     // Transform dates to ISO strings
     const transformedItem = {
       ...budgetItem,
-      note: data.note || '',
       attachments: budgetItem.attachments.map(attachment => ({
         ...attachment,
         createdAt: attachment.createdAt.toISOString(),
@@ -214,25 +213,5 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   } catch (error) {
     console.error('Error in POST:', error)
     return res.status(500).json({ message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' })
-  }
-}
-
-// Helper function to save files
-async function saveFile(file: any): Promise<string> {
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-  
-  try {
-    await fs.mkdir(uploadDir, { recursive: true })
-    
-    const uniqueFilename = `${Date.now()}-${file.originalFilename || 'unnamed'}`
-    const newPath = path.join(uploadDir, uniqueFilename)
-    
-    await fs.copyFile(file.filepath, newPath)
-    await fs.unlink(file.filepath)
-    
-    return `/uploads/${uniqueFilename}`
-  } catch (error) {
-    console.error('Error saving file:', error)
-    throw new Error('Failed to save file')
   }
 }

@@ -4,11 +4,18 @@ import { authOptions } from '../auth/[...nextauth]'
 import prisma from '../../../lib/prisma'
 import { IncomingForm } from 'formidable'
 import { getFileAdapter } from '../../../lib/file-adapter'
+import fs from 'fs/promises'
 
 export const config = {
   api: {
     bodyParser: false,
   },
+}
+
+type Attachment = {
+  filename: string;
+  fileType: string;
+  fileUrl: string;
 }
 
 const fileAdapter = getFileAdapter()
@@ -120,24 +127,52 @@ export default async function handler(
       })
 
       const data = JSON.parse(fields.data as string)
-      const attachments = []
+      const attachments: Attachment[] = []
 
       // Process files if any
+      const filePromises = []
       for (let i = 0; files[`file${i}`]; i++) {
         const file = files[`file${i}`]
         if (file) {
           try {
-            const fileUrl = await fileAdapter.saveFile(file)
-            attachments.push({
-              filename: file.originalFilename || 'unnamed',
-              fileType: file.mimetype || 'application/octet-stream',
-              fileUrl,
-            })
+            // Read the file content
+            const fileContent = await fs.readFile(file.filepath)
+            
+            // Create a File object from the buffer
+            const fileObject = {
+              filepath: file.filepath,
+              originalFilename: file.originalFilename,
+              mimetype: file.mimetype,
+              buffer: fileContent
+            }
+
+            // Add to promises array
+            filePromises.push(
+              fileAdapter.saveFile(fileObject)
+                .then(fileUrl => {
+                  attachments.push({
+                    filename: file.originalFilename || 'unnamed',
+                    fileType: file.mimetype || 'application/octet-stream',
+                    fileUrl,
+                  })
+                })
+                .finally(async () => {
+                  // Clean up temp file
+                  try {
+                    await fs.unlink(file.filepath)
+                  } catch (error) {
+                    console.error('Error cleaning up temp file:', error)
+                  }
+                })
+            )
           } catch (error) {
             console.error(`Error processing file ${i}:`, error)
           }
         }
       }
+
+      // Wait for all file uploads to complete
+      await Promise.all(filePromises)
 
       const updatedItem = await prisma.budgetItem.update({
         where: { id: id },
@@ -158,11 +193,31 @@ export default async function handler(
           },
         },
         include: {
-          attachments: true
+          attachments: {
+            select: {
+              id: true,
+              filename: true,
+              fileType: true,
+              fileUrl: true,
+              createdAt: true,
+            }
+          }
         }
       })
 
-      return res.status(200).json(updatedItem)
+      // Transform dates to ISO strings
+      const transformedItem = {
+        ...updatedItem,
+        attachments: updatedItem.attachments.map(attachment => ({
+          ...attachment,
+          createdAt: attachment.createdAt.toISOString(),
+        })),
+        createdAt: updatedItem.createdAt.toISOString(),
+        updatedAt: updatedItem.updatedAt.toISOString(),
+        recurrenceDate: updatedItem.recurrenceDate?.toISOString() || null,
+      }
+
+      return res.status(200).json(transformedItem)
     } catch (error) {
       console.error('Error updating budget item:', error)
       return res.status(500).json({ message: 'Failed to update item' })

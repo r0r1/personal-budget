@@ -13,6 +13,7 @@ import { Textarea } from "./ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Calendar as CalendarComponent } from "./ui/calendar"
 import CategoryBudget from './form/category'
+import { supabase } from '../lib/supabase'
 
 type Attachment = {
   id: string
@@ -115,7 +116,6 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
 
     setIsLoading(true)
     try {
-      const formData = new FormData()
       const itemData = {
         name,
         amount: parseFloat(amount.replace(/,/g, '')),
@@ -125,12 +125,28 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
         recurrenceDate: recurrenceDate?.toISOString() || null,
         note,
       }
-      formData.append('data', JSON.stringify(itemData))
 
-      // Properly append each file with a unique key
-      selectedFiles.forEach((file, index) => {
-        formData.append(`file${index}`, file, file.name)
-      })
+      const bucketName = process.env.NEXT_PUBLIC_SUPABASE_BUCKET_NAME || ''
+
+      // Upload files to Supabase
+      const fileUrls = await Promise.all(selectedFiles.map(async (file) => {
+        console.log('supabase', supabase)
+        const { data, error } = await supabase.storage
+          .from(bucketName) // Replace with your actual bucket name
+          .upload(`attachments/${file.name}`, file)
+
+        if (error) {
+          throw new Error(`Failed to upload file: ${error.message}`)
+        }
+
+        // Get the public URL of the uploaded file
+        const { publicUrl } = supabase.storage.from(bucketName).getPublicUrl(data.path)
+        return {
+          filename: file.name,
+          fileType: file.type,
+          fileUrl: publicUrl,
+        }
+      }))
 
       const url = editingItem ? `/api/budget-items/${editingItem.id}` : "/api/budget-items"
       const method = editingItem ? "PUT" : "POST"
@@ -138,10 +154,14 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
       const response = await fetch(url, {
         method,
         credentials: 'include',
-        body: formData,
+        body: JSON.stringify({ data: itemData, attachments: fileUrls }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
-      
+
       if (!response.ok) {
+        console.log('response', response)
         const error = await response.json()
         throw new Error(error.message || `Failed to ${editingItem ? 'update' : 'add'} item`)
       }
