@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Plus, Edit2, Calendar } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
+import { useTranslations } from 'next-intl'
 import { Button } from "./ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Input } from "./ui/input"
@@ -33,7 +34,10 @@ interface AddBudgetProps {
   onCancel: () => void
 }
 
+const RECURRENCE_TYPES = ['once', 'daily', 'weekly', 'biweekly', 'monthly', 'yearly'] as const
+
 export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
+  const t = useTranslations('budget')
   const [name, setName] = useState(editingItem?.name || "")
   const [amount, setAmount] = useState(editingItem?.amount.toString() || "")
   const [type, setType] = useState<"income" | "expense">(editingItem?.type || "income")
@@ -44,17 +48,17 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'decimal' }).format(amount);
+    return new Intl.NumberFormat('id-ID', { style: 'decimal' }).format(amount);
   }
 
   const handleSubmit = async () => {
     if (!name || !amount || !category) {
-      toast.error("Please fill in all required fields")
+      toast.error(t('add.requiredFields'))
       return
     }
 
     if (isNaN(parseFloat(amount))) {
-      toast.error("Please enter a valid amount")
+      toast.error(t('add.invalidAmount'))
       return
     }
 
@@ -80,14 +84,17 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
       
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || `Failed to ${editingItem ? 'update' : 'add'} item`)
+        throw new Error(error.message || (editingItem ? t('add.errorUpdate') : t('add.errorAdd')))
       }
 
       onSave()
-      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} item ${editingItem ? 'updated' : 'added'}`)
+      toast.success(editingItem 
+        ? t('add.successUpdate', { type: t(`type.${type}`) })
+        : t('add.successAdd', { type: t(`type.${type}`) })
+      )
     } catch (error) {
       console.error(`Error ${editingItem ? 'updating' : 'adding'} budget item:`, error)
-      toast.error(error instanceof Error ? error.message : `Failed to ${editingItem ? 'update' : 'add'} budget item`)
+      toast.error(error instanceof Error ? error.message : (editingItem ? t('add.errorUpdate') : t('add.errorAdd')))
     } finally {
       setIsLoading(false)
     }
@@ -96,8 +103,8 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
   return (
     <Card className="mb-8">
       <CardHeader>
-        <CardTitle>{editingItem ? 'Edit' : 'Add'} Budget Item</CardTitle>
-        <CardDescription>Enter the details of your income or expense</CardDescription>
+        <CardTitle>{editingItem ? t('add.editTitle') : t('add.title')}</CardTitle>
+        <CardDescription>{t('add.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="grid gap-4" onSubmit={(e) => {
@@ -106,17 +113,17 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
         }}>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">{t('add.name')}</Label>
               <Input 
                 id="name" 
                 value={name} 
                 onChange={(e) => setName(e.target.value)} 
-                placeholder="Salary"
+                placeholder={t('add.namePlaceholder')}
                 required 
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">{t('amount')}</Label>
               <Input
                 id="amount"
                 type="text"
@@ -125,7 +132,7 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
                   const value = e.target.value.replace(/,/g, '');
                   setAmount(value);
                 }}
-                placeholder="1,000"
+                placeholder={t('add.amountPlaceholder')}
                 required
                 step="0.01"
                 min="0"
@@ -134,14 +141,14 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="type">Type</Label>
+              <Label htmlFor="type">{t('type')}</Label>
               <Select value={type} onValueChange={(value: "income" | "expense") => setType(value)}>
                 <SelectTrigger id="type">
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder={t('type')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
+                  <SelectItem value="income">{t('type.income')}</SelectItem>
+                  <SelectItem value="expense">{t('type.expense')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -149,28 +156,27 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
               <CategoryBudget onChange={setCategory} value={category} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="recurrence">Recurrence</Label>
+              <Label htmlFor="recurrence">{t('recurrence')}</Label>
               <Select
                 value={recurrence}
                 onValueChange={(value: "once" | "daily" | "weekly" | "biweekly" | "monthly" | "yearly") => setRecurrence(value)}
               >
                 <SelectTrigger id="recurrence">
-                  <SelectValue placeholder="Select recurrence" />
+                  <SelectValue placeholder={t('recurrence')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="once">Once</SelectItem>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="biweekly">Bi-Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
+                  {RECURRENCE_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {t(`recurrence.${type}`)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           {recurrence !== "once" && (
             <div className="grid gap-2">
-              <Label htmlFor="recurrenceDate">Recurrence Date</Label>
+              <Label htmlFor="recurrenceDate">{t('date')}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -181,7 +187,7 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
                     }`}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
-                    {recurrenceDate ? format(recurrenceDate, "PPP") : <span>Pick a date</span>}
+                    {recurrenceDate ? format(recurrenceDate, "PPP") : <span>{t('add.pickDate')}</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -196,12 +202,12 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
             </div>
           )}
           <div className="grid gap-2">
-            <Label htmlFor="note">Note</Label>
+            <Label htmlFor="note">{t('note')}</Label>
             <Textarea
               id="note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Add any additional information here"
+              placeholder={t('add.notePlaceholder')}
             />
           </div>
         </form>
@@ -213,14 +219,14 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
           disabled={isLoading}
         >
           {isLoading ? (
-            "Processing..."
+            t('add.processing')
           ) : editingItem ? (
             <>
-              <Edit2 className="mr-2 h-4 w-4" /> Update Item
+              <Edit2 className="mr-2 h-4 w-4" /> {t('add.updateItem')}
             </>
           ) : (
             <>
-              <Plus className="mr-2 h-4 w-4" /> Add Item
+              <Plus className="mr-2 h-4 w-4" /> {t('add.addItem')}
             </>
           )}
         </Button>
@@ -229,7 +235,7 @@ export function AddBudget({ editingItem, onSave, onCancel }: AddBudgetProps) {
           onClick={onCancel}
           disabled={isLoading}
         >
-          Cancel
+          {t('cancel')}
         </Button>
       </CardFooter>
     </Card>

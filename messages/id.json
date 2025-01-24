@@ -1,0 +1,181 @@
+{
+  "navigation": {
+    "home": "Beranda",
+    "profile": "Profil",
+    "signIn": "Masuk",
+    "signOut": "Keluar",
+    "oauthApps": "Aplikasi OAuth"
+  },
+  "landing": {
+    "title": "Kelola Keuangan Anda",
+    "subtitle": "Pantau dan atur pengeluaran Anda dengan mudah",
+    "getStarted": "Mulai Sekarang",
+    "heroTitle": "Kendalikan {highlight} Keuangan Anda",
+    "heroTitleHighlight": "Keuangan",
+    "heroSubtitle": "Lacak pemasukan dan pengeluaran Anda, atur anggaran, dan capai tujuan keuangan Anda dengan alat penganggaran kami yang sederhana namun powerful.",
+    "features": {
+      "tracking": {
+        "title": "Pelacakan Mudah",
+        "description": "Lacak pemasukan dan pengeluaran Anda dengan mudah menggunakan antarmuka yang intuitif."
+      },
+      "budgeting": {
+        "title": "Penganggaran Cerdas",
+        "description": "Atur dan kelola anggaran berdasarkan kategori untuk membantu Anda menabung lebih efektif."
+      },
+      "notifications": {
+        "title": "Notifikasi",
+        "description": "Dapatkan pemberitahuan tepat waktu tentang transaksi berulang dan batas anggaran Anda."
+      }
+    },
+    "benefits": {
+      "title": "Mengapa Memilih Platform Kami?",
+      "recurring": {
+        "title": "Transaksi Berulang",
+        "description": "Lacak secara otomatis pemasukan dan pengeluaran rutin Anda dengan transaksi berulang yang cerdas."
+      },
+      "security": {
+        "title": "Aman & Privat",
+        "description": "Data keuangan Anda dienkripsi dan dilindungi dengan keamanan standar industri."
+      }
+    },
+    "cta": {
+      "title": "Siap Mulai Mengelola Uang Anda?",
+      "subtitle": "Bergabung dengan ribuan pengguna yang sudah mengendalikan keuangan mereka.",
+      "button": "Mulai Mengatur Anggaran"
+    },
+    "footer": {
+      "copyright": "  {year} Personal Budget. Hak Cipta Dilindungi."
+    }
+  },
+  "budget": {
+    "planner": {
+      "title": "Perencana Anggaran",
+      "addButton": "Tambah Item Anggaran",
+      "viewList": "Lihat Daftar",
+      "fetchError": "Gagal mengambil data anggaran"
+    },
+    "add": {
+      "title": "Tambah Item Anggaran",
+      "editTitle": "Ubah Item Anggaran",
+      "description": "Masukkan detail pemasukan atau pengeluaran Anda",
+      "name": "Nama",
+      "namePlaceholder": "Gaji",
+      "amountPlaceholder": "1.000",
+      "processing": "Memproses...",
+      "updateItem": "Perbarui Item",
+      "addItem": "Tambah Item",
+      "pickDate": "Pilih tanggal",
+      "notePlaceholder": "Tambahkan informasi tambahan di sini",
+      "requiredFields": "Mohon isi semua kolom yang wajib",
+      "invalidAmount": "Mohon masukkan jumlah yang valid",
+      "successAdd": "{type} berhasil ditambahkan",
+      "successUpdate": "{type} berhasil diperbarui",
+      "errorAdd": "Gagal menambahkan item anggaran",
+      "errorUpdate": "Gagal memperbarui item anggaran"
+    },
+    "list": {
+      "summary": "Ringkasan Anggaran",
+      "totalIncome": "Total Pemasukan",
+      "totalExpenses": "Total Pengeluaran",
+      "balance": "Saldo",
+      "breakdown": "Rincian Anggaran",
+      "items": "Daftar Item",
+      "sort": "Urutkan",
+      "exportPdf": "Ekspor PDF",
+      "pdfTitle": "Laporan Anggaran",
+      "generatedOn": "Dibuat pada {date}",
+      "next": "Berikutnya",
+      "previous": "Sebelumnya",
+      "page": "Halaman {current} dari {total}",
+      "removeSuccess": "Item berhasil dihapus",
+      "removeError": "Gagal menghapus item",
+      "exportSuccess": "PDF berhasil diekspor",
+      "note": "Catatan",
+      "created": "Dibuat",
+      "nextDate": "Berikutnya"
+    },
+    "amount": "Jumlah",
+    "category": "Kategori",
+    "date": "Tanggal",
+    "description": "Deskripsi",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "edit": "Ubah",
+    "delete": "Hapus",
+    "type": {
+      "income": "Pemasukan",
+      "expense": "Pengeluaran"
+    },
+    "recurrence": {
+      "once": "Sekali",
+      "daily": "Harian",
+      "weekly": "Mingguan",
+      "biweekly": "Dua Mingguan",
+      "monthly": "Bulanan",
+      "yearly": "Tahunan"
+    },
+    "categories": {
+      "work": "Pekerjaan",
+      "operational": "Operasional",
+      "transport": "Transportasi",
+      "subscription": "Langganan",
+      "home_utilities": "Rumah & Utilitas",
+      "food": "Makanan",
+      "entertainment": "Hiburan",
+      "education": "Pendidikan",
+      "sports_health": "Olahraga & Kesehatan",
+      "social": "Sosial",
+      "business": "Bisnis",
+      "beauty": "Kecantikan",
+      "investment_stocks": "Investasi & Saham",
+      "savings": "Tabungan",
+      "travel": "Perjalanan",
+      "loan": "Pinjaman",
+      "bills": "Tagihan",
+      "other": "Lainnya",
+      "selectPlaceholder": "Pilih Kategori"
+    },
+    "note": "Catatan"
+  },
+  "oauth": {
+    "title": "Aplikasi OAuth",
+    "createNew": "Buat Aplikasi Baru",
+    "form": {
+      "name": "Nama Aplikasi",
+      "description": "Deskripsi",
+      "redirectUris": "URI Pengalihan (satu per baris)",
+      "redirectUrisPlaceholder": "https://example.com/callback",
+      "createButton": "Buat Aplikasi",
+      "cancelButton": "Batal"
+    },
+    "app": {
+      "clientId": "ID Klien",
+      "clientSecret": "Rahasia Klien",
+      "redirectUris": "URI Pengalihan",
+      "deleteButton": "Hapus",
+      "deleteConfirm": "Apakah Anda yakin ingin menghapus aplikasi OAuth ini?",
+      "errorCreate": "Gagal membuat aplikasi OAuth",
+      "errorDelete": "Gagal menghapus aplikasi OAuth",
+      "errorRedirectUri": "Minimal satu URI pengalihan diperlukan",
+      "errorFetch": "Gagal mengambil data aplikasi"
+    }
+  },
+  "profile": {
+    "title": "Profil Pengguna",
+    "name": "Nama",
+    "email": "Email",
+    "updateProfile": "Perbarui Profil",
+    "settings": "Pengaturan"
+  },
+  "common": {
+    "loading": "Memuat...",
+    "error": "Terjadi kesalahan",
+    "success": "Berhasil",
+    "required": "Wajib diisi",
+    "invalidEmail": "Email tidak valid",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "appName": "SmallBudget",
+    "viewProfile": "Lihat Profil"
+  }
+}

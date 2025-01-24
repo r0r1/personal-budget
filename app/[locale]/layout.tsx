@@ -2,29 +2,30 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { NextIntlClientProvider } from 'next-intl';
 import { getServerSession } from "next-auth";
-import { authOptions } from "../pages/api/auth/[...nextauth]";
-import { SessionProvider } from "../components/session-provider";
-import { Toaster } from "../components/ui/toaster";
-import { Navigation } from "../components/navigation";
-import "./globals.css";
+import { authOptions } from "@/pages/api/auth/[...nextauth]";
+import { SessionProvider } from "@/components/session-provider";
+import { Toaster } from "@/components/ui/toaster";
+import { Navigation } from "@/components/navigation";
+import { locales, defaultLocale } from "@/i18n/config";
+import "../globals.css";
 
 const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
+  src: "../fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
   display: "swap",
 });
 
 const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
+  src: "../fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Aplikasi Anggaran Pribadi",
-  description: "Kelola keuangan pribadi Anda dengan efektif",
+  title: "Personal Budget App",
+  description: "Manage your personal finances effectively",
 };
 
 export default async function RootLayout({
@@ -35,19 +36,23 @@ export default async function RootLayout({
   params: { locale: string };
 }>) {
   const session = await getServerSession(authOptions);
+
+  // Validate locale and fallback to default if invalid
+  const validLocale = locales.includes(locale as any) ? locale : defaultLocale;
+  
   let messages;
   try {
-    messages = (await import(`../messages/${locale}.json`)).default;
+    messages = (await import(`../../messages/${validLocale}.json`)).default;
   } catch (error) {
     console.error('Failed to load messages:', error);
-    messages = {};
+    messages = (await import('../../messages/id.json')).default;
   }
 
   return (
-    <html lang={locale} className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang={validLocale} className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="min-h-screen bg-background font-sans antialiased">
         <SessionProvider session={session}>
-          <NextIntlClientProvider locale={locale} messages={messages}>
+          <NextIntlClientProvider locale={validLocale} messages={messages}>
             <div className="relative flex min-h-screen flex-col">
               <Navigation />
               <div className="flex-1 flex-col">

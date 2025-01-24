@@ -1,0 +1,184 @@
+{
+  "navigation": {
+    "home": "Home",
+    "profile": "Profile",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "oauthApps": "OAuth Apps"
+  },
+  "landing": {
+    "title": "Manage Your Finances",
+    "subtitle": "Monitor and manage your expenses easily",
+    "getStarted": "Get Started",
+    "heroTitle": "Control Your {highlight}",
+    "heroTitleHighlight": "Finances",
+    "heroSubtitle": "Track your income and expenses, set budgets, and achieve your financial goals with our simple yet powerful budgeting tools.",
+    "features": {
+      "tracking": {
+        "title": "Easy Tracking",
+        "description": "Track your income and expenses easily with our intuitive interface."
+      },
+      "budgeting": {
+        "title": "Smart Budgeting",
+        "description": "Set and manage budgets by category to help you save more effectively."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Get timely notifications about your recurring transactions and budget limits."
+      }
+    },
+    "benefits": {
+      "title": "Why Choose Our Platform?",
+      "recurring": {
+        "title": "Recurring Transactions",
+        "description": "Automatically track your routine income and expenses with smart recurring transactions."
+      },
+      "security": {
+        "title": "Secure & Private",
+        "description": "Your financial data is encrypted and protected with industry-standard security."
+      }
+    },
+    "cta": {
+      "title": "Ready to Start Managing Your Money?",
+      "subtitle": "Join thousands of users who are already in control of their finances.",
+      "button": "Start Budgeting"
+    },
+    "footer": {
+      "copyright": "  {year} Personal Budget. All Rights Reserved."
+    }
+  },
+  "budget": {
+    "planner": {
+      "title": "Budget Planner",
+      "addButton": "Add Budget Item",
+      "viewList": "View List",
+      "fetchError": "Failed to fetch budget data"
+    },
+    "add": {
+      "title": "Add Budget Item",
+      "editTitle": "Edit Budget Item",
+      "description": "Enter your income or expense details",
+      "name": "Name",
+      "namePlaceholder": "Salary",
+      "amountPlaceholder": "1,000",
+      "processing": "Processing...",
+      "updateItem": "Update Item",
+      "addItem": "Add Item",
+      "pickDate": "Pick a date",
+      "notePlaceholder": "Add additional information here",
+      "requiredFields": "Please fill in all required fields",
+      "invalidAmount": "Please enter a valid amount",
+      "successAdd": "{type} added successfully",
+      "successUpdate": "{type} updated successfully",
+      "errorAdd": "Failed to add budget item",
+      "errorUpdate": "Failed to update budget item"
+    },
+    "list": {
+      "summary": "Budget Summary",
+      "totalIncome": "Total Income",
+      "totalExpenses": "Total Expenses",
+      "balance": "Balance",
+      "breakdown": "Budget Breakdown",
+      "items": "Item List",
+      "sort": "Sort",
+      "exportPdf": "Export PDF",
+      "pdfTitle": "Budget Report",
+      "generatedOn": "Generated on {date}",
+      "next": "Next",
+      "previous": "Previous",
+      "page": "Page {current} of {total}",
+      "removeSuccess": "Item removed successfully",
+      "removeError": "Failed to remove item",
+      "exportSuccess": "PDF exported successfully",
+      "note": "Note",
+      "created": "Created",
+      "nextDate": "Next"
+    },
+    "amount": "Amount",
+    "category": "Category",
+    "date": "Date",
+    "description": "Description",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "type": {
+      "income": "Income",
+      "expense": "Expense"
+    },
+    "recurrence": {
+      "once": "Once",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "biweekly": "Biweekly",
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "categories": {
+      "work": "Work",
+      "operational": "Operational",
+      "transport": "Transportation",
+      "subscription": "Subscription",
+      "home_utilities": "Home & Utilities",
+      "food": "Food",
+      "entertainment": "Entertainment",
+      "education": "Education",
+      "sports_health": "Sports & Health",
+      "social": "Social",
+      "business": "Business",
+      "beauty": "Beauty",
+      "investment_stocks": "Investment & Stocks",
+      "savings": "Savings",
+      "travel": "Travel",
+      "loan": "Loan",
+      "bills": "Bills",
+      "other": "Other",
+      "selectPlaceholder": "Select Category"
+    },
+    "note": "Note"
+  },
+  "oauth": {
+    "title": "OAuth Apps",
+    "createNew": "Create New App",
+    "form": {
+      "name": "App Name",
+      "description": "Description",
+      "redirectUris": "Redirect URIs (one per line)",
+      "redirectUrisPlaceholder": "https://example.com/callback",
+      "createButton": "Create App",
+      "cancelButton": "Cancel"
+    },
+    "app": {
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "redirectUris": "Redirect URIs",
+      "deleteButton": "Delete",
+      "deleteConfirm": "Are you sure you want to delete this OAuth app?",
+      "errorCreate": "Failed to create OAuth app",
+      "errorDelete": "Failed to delete OAuth app",
+      "errorRedirectUri": "At least one redirect URI is required",
+      "errorFetch": "Failed to fetch apps"
+    }
+  },
+  "profile": {
+    "title": "User Profile",
+    "accountDetails": "Account Details",
+    "name": "Name",
+    "email": "Email",
+    "noName": "No name provided",
+    "noEmail": "No email provided",
+    "updateProfile": "Update Profile",
+    "settings": "Settings"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "required": "Required",
+    "invalidEmail": "Invalid email",
+    "save": "Save",
+    "cancel": "Cancel",
+    "appName": "SmallBudget",
+    "viewProfile": "View Profile"
+  }
+}

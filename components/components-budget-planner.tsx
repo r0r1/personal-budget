@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Plus, List } from "lucide-react"
+import { useTranslations } from 'next-intl'
 import { Button } from "./ui/button"
 import { AddBudget } from "./add-budget"
 import { ListBudget } from "./list-budget"
@@ -24,6 +25,7 @@ type View = "list" | "add"
 
 export function BudgetPlanner() {
   const { data: session } = useSession()
+  const t = useTranslations('budget')
   const [items, setItems] = useState<Item[]>([])
   const [currentView, setCurrentView] = useState<View>("list")
   const [editingItem, setEditingItem] = useState<Item | null>(null)
@@ -40,12 +42,12 @@ export function BudgetPlanner() {
         credentials: 'include',
       })
       if (!response.ok) {
-        throw new Error('Failed to fetch budget items')
+        throw new Error(t('planner.fetchError'))
       }
       const data = await response.json()
       setItems(data)
     } catch (error) {
-      console.error("Error fetching budget items:", error)
+      console.error(t('planner.fetchError'), error)
     }
   }
 
@@ -68,14 +70,14 @@ export function BudgetPlanner() {
   return (
     <div className="container mx-auto p-4">
       <div className="mb-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Budget Planner</h1>
+        <h1 className="text-2xl font-bold">{t('planner.title')}</h1>
         {currentView === "list" ? (
           <Button onClick={() => setCurrentView("add")}>
-            <Plus className="mr-2 h-4 w-4" /> Add Budget Item
+            <Plus className="mr-2 h-4 w-4" /> {t('planner.addButton')}
           </Button>
         ) : (
           <Button variant="outline" onClick={() => setCurrentView("list")}>
-            <List className="mr-2 h-4 w-4" /> View List
+            <List className="mr-2 h-4 w-4" /> {t('planner.viewList')}
           </Button>
         )}
       </div>
