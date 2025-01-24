@@ -8,12 +8,18 @@ export function LanguageSwitcher() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
-  const currentLocale = params.locale as string;
+  const currentLocale = params.locale as string || 'id'; // Provide default value
 
   const switchLanguage = (locale: string) => {
-    // Remove the current locale from pathname
-    const pathWithoutLocale = pathname.replace(/^\/[^/]+/, '');
-    router.push(pathWithoutLocale || '/', { locale });
+    if (locale === currentLocale) return; // Don't switch if same locale
+
+    try {
+      const pathWithoutLocale = pathname.replace(/^\/[^/]+/, '') || '/';
+      router.push(pathWithoutLocale, { locale });
+    } catch (error) {
+      console.error('Error switching language:', error);
+      window.location.href = `/${locale}${pathname.replace(/^\/[^/]+/, '') || '/'}`;
+    }
   };
 
   return (
