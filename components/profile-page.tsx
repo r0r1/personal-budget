@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useTranslations } from 'next-intl';
 import { Card } from "@/components/ui/card";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export function ProfilePage() {
   const { data: session } = useSession();
@@ -10,7 +11,10 @@ export function ProfilePage() {
 
   return (
     <div className="container mx-auto p-6 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">{t('profile.title')}</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">{t('profile.title')}</h1>
+        <LanguageSwitcher />
+      </div>
 
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">{t('profile.accountDetails')}</h2>

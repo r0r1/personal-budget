@@ -37,7 +37,7 @@ const CategoryBudget: React.FC<CategoryBudgetProps> = ({ onChange, value }) => {
         "loan",
         "bills",
         "other"
-    ].sort((a, b) => t(`categories.${a}`).localeCompare(t(`categories.${b}`)));
+    ].sort((a, b) => t(`categories.${a.toLowerCase()}`).localeCompare(t(`categories.${b.toLowerCase()}`)));
 
     const handleCategoryChange = (value: string) => {
         setCategory(value);
@@ -56,7 +56,7 @@ const CategoryBudget: React.FC<CategoryBudgetProps> = ({ onChange, value }) => {
                 <SelectContent>
                   {categoryOptions.map((option) => (
                     <SelectItem key={option} value={option}>
-                        {t(`categories.${option}`)}
+                        {t(`categories.${option.toLowerCase()}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>

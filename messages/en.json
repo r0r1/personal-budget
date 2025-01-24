@@ -134,8 +134,7 @@
       "bills": "Bills",
       "other": "Other",
       "selectPlaceholder": "Select Category"
-    },
-    "note": "Note"
+    }
   },
   "oauth": {
     "title": "OAuth Apps",

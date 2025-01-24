@@ -134,8 +134,7 @@
       "bills": "Tagihan",
       "other": "Lainnya",
       "selectPlaceholder": "Pilih Kategori"
-    },
-    "note": "Catatan"
+    }
   },
   "oauth": {
     "title": "Aplikasi OAuth",

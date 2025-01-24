@@ -85,16 +85,16 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
 
     doc.text(`${t('list.totalIncome')}: IDR ${formatAmount(totalIncome)}`, 14, 35)
     doc.setTextColor(255, 0, 0)
-    doc.text(`${t('list.totalExpenses')}: IDR ${formatAmount(totalExpenses)}`, 14, 42)
+    doc.text(`${t('list.totalExpenses')}: IDR ${formatAmount(Number(totalExpenses.toFixed(2)))}`, 14, 42)
     doc.setTextColor(0, 0, 0)
-    doc.text(`${t('list.balance')}: IDR ${formatAmount(balance)}`, 14, 49)
+    doc.text(`${t('list.balance')}: IDR ${formatAmount(Number(balance.toFixed(2)))}`, 14, 49)
 
     // Prepare table data
     const tableData = sortedItems.map(item => [
       item.name,
       item.type === "expense" ? `- IDR ${formatAmount(item.amount)}` : `IDR ${formatAmount(item.amount)}`,
       t(`type.${item.type}`),
-      item.category,
+      t(`categories.${item.category.toLowerCase()}`),
       t(`recurrence.${item.recurrence}`),
       format(new Date(item.createdAt), "MMM d, yyyy")
     ])
@@ -205,7 +205,7 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
                     style={{ backgroundColor: `hsl(${index * 137.508}, 70%, 50%)` }}
                   />
                   <span className="text-sm">
-                    {t(`categories.${catData.category}`)} ({catData.percentage}%)
+                    {t(`categories.${catData.category.toLowerCase()}`)} ({catData.percentage}%)
                   </span>
                 </div>
               ))}
@@ -247,7 +247,7 @@ export function ListBudget({ items, onEdit, onRefresh }: ListBudgetProps) {
                 </div>
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded-full">
-                    {t(`categories.${item.category}`)}
+                    {t(`categories.${item.category.toLowerCase()}`)}
                   </span>
                   <span>{t(`recurrence.${item.recurrence}`)}</span>
                 </div>
